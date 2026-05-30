@@ -152,9 +152,9 @@ function PaymentForm({ form, setForm, onSave, onClose, saving, isEdit, projects,
         <Field label="서비스" style={{ gridColumn: '1/-1' }}>
           <ServiceSelect value={form.service} onChange={v => setForm(f => ({...f, service: v}))} services={services} />
         </Field>
-        <Field label="금액">
+        <Field label="금액" style={{ gridColumn: '1/-1' }}>
           <div style={{ display: 'flex', gap: 6 }}>
-            <select value={form.currency} onChange={e => setForm(f => ({...f, currency: e.target.value}))} style={{ ...inputStyle, width: 70, flexShrink: 0 }}>
+            <select value={form.currency} onChange={e => setForm(f => ({...f, currency: e.target.value}))} style={{ ...inputStyle, width: 80, flexShrink: 0 }}>
               {['USD','KRW','EUR'].map(c => <option key={c}>{c}</option>)}
             </select>
             <input type="number" value={form.amount} onChange={e => setForm(f => ({...f, amount: e.target.value}))} placeholder="0" style={{ ...inputStyle, flex: 1, minWidth: 0 }} />
