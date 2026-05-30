@@ -23,7 +23,7 @@ const SERVICE_DOMAINS = {
 
   // AI 어시스턴트
   'chatgpt': 'openai.com',
-  'claude': 'anthropic.com',
+  'claude': 'claude.ai',
   'gemini': 'gemini.google.com',
   'perplexity': 'perplexity.ai',
   'copilot': 'microsoft.com',
