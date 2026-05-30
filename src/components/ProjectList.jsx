@@ -56,16 +56,52 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
     }
   }
 
-  const filteredProjects = projects.filter(p => {
-    if (!search) return true
-    return p.name?.toLowerCase().includes(search.toLowerCase()) || p.client?.toLowerCase().includes(search.toLowerCase())
-  })
+  const [sortBy, setSortBy] = useState('latest')
+
+  const STATUS_ORDER = { '미청구': 0, '청구완료': 1, '정산완료': 2 }
+
+  const filteredProjects = projects
+    .slice()
+    .filter(p => {
+      if (!search) return true
+      return p.name?.toLowerCase().includes(search.toLowerCase()) || p.client?.toLowerCase().includes(search.toLowerCase())
+    })
+    .sort((a, b) => {
+      if (sortBy === 'latest') return projects.indexOf(b) - projects.indexOf(a)
+      if (sortBy === 'name') return a.name.localeCompare(b.name, 'ko')
+      if (sortBy === 'cost') {
+        const aTotal = [...payments, ...subscriptions].filter(r => r.project === a.id).reduce((s, r) => s + toKRW(r.amount, r.currency), 0)
+        const bTotal = [...payments, ...subscriptions].filter(r => r.project === b.id).reduce((s, r) => s + toKRW(r.amount, r.currency), 0)
+        return bTotal - aTotal
+      }
+      if (sortBy === 'status') return (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9)
+      return 0
+    })
 
   return (
     <div style={{ padding: '0 16px 24px' }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
         <SearchBar value={search} onChange={setSearch} placeholder="프로젝트명, 광고주 검색..." />
         <button onClick={openAdd} style={{ padding: '8px 16px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ 추가</button>
+      </div>
+
+      {/* 정렬 선택 */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+        {[
+          { value: 'latest', label: '최신순' },
+          { value: 'name',   label: '이름순' },
+          { value: 'cost',   label: '비용순' },
+          { value: 'status', label: '정산상태순' },
+        ].map(s => (
+          <button key={s.value} onClick={() => setSortBy(s.value)}
+            style={{ fontSize: 11, padding: '5px 10px', borderRadius: 20,
+              border: '1px solid ' + (sortBy === s.value ? COLORS.primary : '#d2d2d7'),
+              background: sortBy === s.value ? COLORS.primaryLight : '#fff',
+              color: sortBy === s.value ? COLORS.primary : COLORS.textSecondary,
+              cursor: 'pointer', fontWeight: sortBy === s.value ? 600 : 400 }}>
+            {s.label}
+          </button>
+        ))}
       </div>
 
       <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 12 }}>
