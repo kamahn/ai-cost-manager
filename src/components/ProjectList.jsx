@@ -14,6 +14,8 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState('latest')
+  const [sortDir, setSortDir] = useState('desc')
 
   const handleSort = (val) => {
     if (sortBy === val) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -61,9 +63,7 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
     }
   }
 
-  const [sortBy, setSortBy] = useState('latest')
-
-  const STATUS_ORDER = { '미청구': 0, '청구완료': 1, '정산완료': 2 }
+  const STATUS_ORDER = { '진행중': 0, '완료': 1, '정산완료': 2 }
 
   const filteredProjects = projects
     .slice()
