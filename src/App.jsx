@@ -130,9 +130,9 @@ export default function App() {
   if (!loggedIn) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 24, padding: 32 }}>
-        <div style={{ fontSize: 48 }}>🤖</div>
+        <img src="/icon-512.png" width={80} height={80} style={{ borderRadius: 18 }} alt="AI 구독관리" />
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>AI 비용 관리</div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>AI 구독관리</div>
           <div style={{ fontSize: 14, color: COLORS.textSecondary, lineHeight: 1.6 }}>
             AI 툴 구독 및 크레딧 결제 내역을<br />구글 시트와 연동해서 관리합니다.
           </div>
@@ -155,8 +155,8 @@ export default function App() {
       {/* 헤더 */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e5e5ea', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 20 }}>🤖</span>
-          <span style={{ fontSize: 16, fontWeight: 700 }}>AI 비용 관리</span>
+          <img src="/icon-192.png" width={28} height={28} style={{ borderRadius: 6 }} alt="AI 구독관리" />
+          <span style={{ fontSize: 16, fontWeight: 700 }}>AI 구독관리</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {user?.picture && <img src={user.picture} width={28} height={28} style={{ borderRadius: '50%' }} alt="profile" />}

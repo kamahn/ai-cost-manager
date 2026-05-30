@@ -1,6 +1,6 @@
 {
-  "name": "AI 비용 관리",
-  "short_name": "AI비용",
+  "name": "AI 구독관리",
+  "short_name": "AI 구독관리",
   "description": "AI 툴 구독 및 크레딧 비용 관리 앱",
   "start_url": "/",
   "display": "standalone",
