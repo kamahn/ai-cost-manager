@@ -57,25 +57,35 @@ async function getSheetIds() {
   return map
 }
 
+// 쉼표 포함 금액 문자열 파싱 (예: "1,789,044" → 1789044)
+function parseAmount(val) {
+  if (!val) return 0
+  const cleaned = String(val).replace(/,/g, '')
+  return parseFloat(cleaned) || 0
+}
+
 // ── 결제내역 ──────────────────────────────────────────
 
 export async function getPayments() {
   const rows = await readSheet('결제내역!A:J')
   if (rows.length < 2) return []
   const [, ...data] = rows
-  return data.filter(r => r[0]).map((r, i) => ({
-    _row: i + 2,
-    id: r[0] || '',
-    date: r[1] || '',
-    service: r[2] || '',
-    project: r[3] || '',
-    currency: r[4] || 'USD',
-    amount: parseFloat(r[5]) || 0,
-    memo: r[6] || '',
-    settleStatus: r[7] || '미청구',
-    billingDate: r[8] || '',
-    settleDate: r[9] || '',
-  }))
+  return data
+    .filter(r => r[0])
+    .map((r, i) => ({
+      _row: i + 2,
+      id: r[0] || '',
+      date: r[1] || '',
+      service: r[2] || '',
+      project: r[3] || '',
+      currency: r[4] || 'USD',
+      amount: parseAmount(r[5]),
+      memo: r[6] || '',
+      settleStatus: r[7] || '미청구',
+      billingDate: r[8] || '',
+      settleDate: r[9] || '',
+    }))
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
 }
 
 export async function addPayment(p) {
@@ -99,21 +109,24 @@ export async function getSubscriptions() {
   const rows = await readSheet('구독목록!A:L')
   if (rows.length < 2) return []
   const [, ...data] = rows
-  return data.filter(r => r[0]).map((r, i) => ({
-    _row: i + 2,
-    id: r[0] || '',
-    service: r[1] || '',
-    cycle: r[2] || '월간',
-    currency: r[3] || 'KRW',
-    amount: parseFloat(r[4]) || 0,
-    startDate: r[5] || '',
-    renewDate: r[6] || '',
-    project: r[7] || '',
-    memo: r[8] || '',
-    settleStatus: r[9] || '미청구',
-    billingDate: r[10] || '',
-    settleDate: r[11] || '',
-  }))
+  return data
+    .filter(r => r[0])
+    .map((r, i) => ({
+      _row: i + 2,
+      id: r[0] || '',
+      service: r[1] || '',
+      cycle: r[2] || '월간',
+      currency: r[3] || 'KRW',
+      amount: parseAmount(r[4]),
+      startDate: r[5] || '',
+      renewDate: r[6] || '',
+      project: r[7] || '',
+      memo: r[8] || '',
+      settleStatus: r[9] || '미청구',
+      billingDate: r[10] || '',
+      settleDate: r[11] || '',
+    }))
+    .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
 }
 
 export async function addSubscription(s) {

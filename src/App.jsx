@@ -140,6 +140,12 @@ export default function App() {
 
       {/* 탭 콘텐츠 */}
       <div style={{ flex: 1, overflowY: 'auto', paddingTop: 16 }}>
+        {tab !== 'dashboard' && (
+          <div style={{ padding: '0 16px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20 }}>{TABS.find(t => t.id === tab)?.icon}</span>
+            <span style={{ fontSize: 18, fontWeight: 700, color: '#7F77DD' }}>{TABS.find(t => t.id === tab)?.label}</span>
+          </div>
+        )}
         {tab === 'dashboard' && <Dashboard payments={payments} subscriptions={subscriptions} projects={projects} onCheckAlerts={handleCheckAlerts} alertLoading={alertLoading} />}
         {tab === 'payments'  && <PaymentList payments={payments} projects={projects} services={services} onRefresh={loadAll} loading={loading} />}
         {tab === 'subs'      && <SubscriptionList subscriptions={subscriptions} projects={projects} services={services} onRefresh={loadAll} loading={loading} />}
@@ -148,14 +154,20 @@ export default function App() {
 
       {/* 하단 탭바 */}
       <div style={{ background: '#fff', borderTop: '1px solid #e5e5ea', display: 'flex', position: 'sticky', bottom: 0, zIndex: 100 }}>
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ flex: 1, padding: '10px 4px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer',
-              color: tab === t.id ? COLORS.primary : COLORS.textSecondary, borderTop: `2px solid ${tab === t.id ? COLORS.primary : 'transparent'}` }}>
-            <span style={{ fontSize: 18 }}>{t.icon}</span>
-            <span style={{ fontSize: 10, fontWeight: tab === t.id ? 600 : 400 }}>{t.label}</span>
-          </button>
-        ))}
+        {TABS.map(t => {
+          const active = tab === t.id
+          return (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              style={{ flex: 1, padding: '10px 4px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                background: active ? '#EEEDFE' : '#fff', border: 'none', cursor: 'pointer',
+                color: active ? '#7F77DD' : '#b0b0b8',
+                borderTop: '2px solid ' + (active ? '#7F77DD' : 'transparent'),
+                transition: 'all 0.15s' }}>
+              <span style={{ fontSize: 20, filter: active ? 'none' : 'grayscale(100%) opacity(40%)' }}>{t.icon}</span>
+              <span style={{ fontSize: 10, fontWeight: active ? 700 : 400 }}>{t.label}</span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
