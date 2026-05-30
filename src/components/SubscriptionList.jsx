@@ -11,8 +11,8 @@ function empty() {
 }
 
 export default function SubscriptionList({ subscriptions, projects, services, onRefresh, loading }) {
-  const [showForm, setShowForm] = useState(false)
-  const [editItem, setEditItem] = useState(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editId, setEditId] = useState(null)
   const [form, setForm] = useState(empty())
   const [saving, setSaving] = useState(false)
   const [filterStatus, setFilterStatus] = useState('전체')
@@ -21,37 +21,38 @@ export default function SubscriptionList({ subscriptions, projects, services, on
   projects.forEach(p => { projectMap[p.id] = p.name })
 
   const today = new Date(); today.setHours(0,0,0,0)
-
   const filtered = subscriptions.filter(s => filterStatus === '전체' || s.settleStatus === filterStatus)
 
   const getDaysLeft = (renewDate) => {
     if (!renewDate) return null
-    const d = new Date(renewDate)
-    return Math.ceil((d - today) / 86400000)
+    return Math.ceil((new Date(renewDate) - today) / 86400000)
   }
 
-  const openAdd = () => { setForm(empty()); setEditItem(null); setShowForm(true) }
-  const openEdit = (item) => { setForm({ ...item, amount: String(item.amount) }); setEditItem(item); setShowForm(true) }
-  const closeForm = () => { setShowForm(false); setEditItem(null) }
+  const openAdd = () => { setForm(empty()); setEditId(null); setShowAddForm(true) }
+  const openEdit = (item) => {
+    setShowAddForm(false)
+    setForm({ ...item, amount: String(item.amount) })
+    setEditId(item.id)
+  }
+  const closeForm = () => { setShowAddForm(false); setEditId(null) }
 
   const save = async () => {
     if (!form.service || !form.amount) return
     setSaving(true)
     try {
-      if (editItem) {
-        await updateSubscription({ ...editItem, ...form, amount: parseFloat(form.amount) })
+      if (editId) {
+        const original = subscriptions.find(s => s.id === editId)
+        await updateSubscription({ ...original, ...form, amount: parseFloat(form.amount) })
       } else {
         await addSubscription({ ...form, amount: parseFloat(form.amount) })
       }
-      closeForm()
-      onRefresh()
+      closeForm(); onRefresh()
     } finally { setSaving(false) }
   }
 
   const remove = async (item) => {
     if (!window.confirm(`"${item.service}" 구독을 삭제할까요?`)) return
-    await deleteSubscription(item)
-    onRefresh()
+    await deleteSubscription(item); onRefresh()
   }
 
   return (
@@ -70,76 +71,30 @@ export default function SubscriptionList({ subscriptions, projects, services, on
         ))}
       </div>
 
-      {/* 폼 */}
-      {showForm && (
-        <div style={{ background: '#fff', borderRadius: 16, border: `2px solid ${COLORS.primary}`, padding: '16px', marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{editItem ? '구독 수정' : '구독 추가'}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label="서비스">
-              <select value={form.service} onChange={e => setForm(f => ({...f, service: e.target.value}))} style={inputStyle}>
-                <option value="">선택</option>
-                {services.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </Field>
-            <Field label="구독 주기">
-              <select value={form.cycle} onChange={e => setForm(f => ({...f, cycle: e.target.value}))} style={inputStyle}>
-                {CYCLES.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </Field>
-            <Field label="금액">
-              <div style={{ display: 'flex', gap: 6 }}>
-                <select value={form.currency} onChange={e => setForm(f => ({...f, currency: e.target.value}))} style={{ ...inputStyle, width: 70, flexShrink: 0 }}>
-                  {CURRENCIES.map(c => <option key={c}>{c}</option>)}
-                </select>
-                <input type="number" value={form.amount} onChange={e => setForm(f => ({...f, amount: e.target.value}))} placeholder="0" style={{ ...inputStyle, flex: 1 }} />
-              </div>
-            </Field>
-            <Field label="프로젝트">
-              <select value={form.project} onChange={e => setForm(f => ({...f, project: e.target.value}))} style={inputStyle}>
-                <option value="">미지정</option>
-                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </Field>
-            <Field label="구독 개시일">
-              <input type="date" value={form.startDate} onChange={e => setForm(f => ({...f, startDate: e.target.value}))} style={inputStyle} />
-            </Field>
-            <Field label="갱신 예정일">
-              <input type="date" value={form.renewDate} onChange={e => setForm(f => ({...f, renewDate: e.target.value}))} style={inputStyle} />
-            </Field>
-            <Field label="정산 상태">
-              <select value={form.settleStatus} onChange={e => setForm(f => ({...f, settleStatus: e.target.value}))} style={inputStyle}>
-                {SETTLE_LIST.map(s => <option key={s}>{s}</option>)}
-              </select>
-            </Field>
-            <Field label="청구일">
-              <input type="date" value={form.billingDate} onChange={e => setForm(f => ({...f, billingDate: e.target.value}))} style={inputStyle} />
-            </Field>
-            <Field label="정산일">
-              <input type="date" value={form.settleDate} onChange={e => setForm(f => ({...f, settleDate: e.target.value}))} style={inputStyle} />
-            </Field>
-          </div>
-          <Field label="메모" style={{ marginTop: 10 }}>
-            <input value={form.memo} onChange={e => setForm(f => ({...f, memo: e.target.value}))} placeholder="메모" style={inputStyle} />
-          </Field>
-          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-            <button onClick={save} disabled={saving} style={{ padding: '9px 20px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-              {saving ? '저장 중...' : (editItem ? '수정 완료' : '저장')}
-            </button>
-            <button onClick={closeForm} style={{ padding: '9px 16px', background: '#f5f5f7', color: COLORS.textSecondary, border: 'none', borderRadius: 10, fontSize: 13, cursor: 'pointer' }}>취소</button>
-          </div>
-        </div>
+      {/* 추가 폼 */}
+      {showAddForm && (
+        <SubInlineForm form={form} setForm={setForm} onSave={save} onClose={closeForm} saving={saving} isEdit={false} projects={projects} services={services} />
       )}
 
-      {/* 목록 */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: COLORS.textSecondary }}>불러오는 중...</div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', color: COLORS.textSecondary, fontSize: 13 }}>구독 내역이 없습니다</div>
       ) : filtered.map(s => {
+        const isEditing = editId === s.id
         const sc = SETTLE_COLORS[s.settleStatus] || SETTLE_COLORS['미청구']
         const pName = projectMap[s.project] || s.project || ''
         const daysLeft = getDaysLeft(s.renewDate)
         const isUrgent = daysLeft !== null && daysLeft <= 7 && daysLeft >= 0
+
+        if (isEditing) {
+          return (
+            <div key={s.id} style={{ marginBottom: 10 }}>
+              <SubInlineForm form={form} setForm={setForm} onSave={save} onClose={closeForm} saving={saving} isEdit={true} projects={projects} services={services} />
+            </div>
+          )
+        }
+
         return (
           <div key={s.id} style={{ background: '#fff', borderRadius: 14, border: `1px solid ${isUrgent ? '#FFB74D' : '#e5e5ea'}`, padding: '14px 16px', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -169,6 +124,67 @@ export default function SubscriptionList({ subscriptions, projects, services, on
           </div>
         )
       })}
+    </div>
+  )
+}
+
+function SubInlineForm({ form, setForm, onSave, onClose, saving, isEdit, projects, services }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: `2px solid ${COLORS.primary}`, padding: '16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{isEdit ? '구독 수정' : '구독 추가'}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <Field label="서비스">
+          <select value={form.service} onChange={e => setForm(f => ({...f, service: e.target.value}))} style={inputStyle}>
+            <option value="">선택</option>
+            {services.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </Field>
+        <Field label="구독 주기">
+          <select value={form.cycle} onChange={e => setForm(f => ({...f, cycle: e.target.value}))} style={inputStyle}>
+            {['월간','연간'].map(c => <option key={c}>{c}</option>)}
+          </select>
+        </Field>
+        <Field label="금액">
+          <div style={{ display: 'flex', gap: 6 }}>
+            <select value={form.currency} onChange={e => setForm(f => ({...f, currency: e.target.value}))} style={{ ...inputStyle, width: 70, flexShrink: 0 }}>
+              {['KRW','USD','EUR'].map(c => <option key={c}>{c}</option>)}
+            </select>
+            <input type="number" value={form.amount} onChange={e => setForm(f => ({...f, amount: e.target.value}))} placeholder="0" style={{ ...inputStyle, flex: 1 }} />
+          </div>
+        </Field>
+        <Field label="프로젝트">
+          <select value={form.project} onChange={e => setForm(f => ({...f, project: e.target.value}))} style={inputStyle}>
+            <option value="">미지정</option>
+            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </Field>
+        <Field label="구독 개시일">
+          <input type="date" value={form.startDate} onChange={e => setForm(f => ({...f, startDate: e.target.value}))} style={inputStyle} />
+        </Field>
+        <Field label="갱신 예정일">
+          <input type="date" value={form.renewDate} onChange={e => setForm(f => ({...f, renewDate: e.target.value}))} style={inputStyle} />
+        </Field>
+        <Field label="정산 상태">
+          <select value={form.settleStatus} onChange={e => setForm(f => ({...f, settleStatus: e.target.value}))} style={inputStyle}>
+            {['미청구','청구완료','정산완료'].map(s => <option key={s}>{s}</option>)}
+          </select>
+        </Field>
+        <Field label="청구일">
+          <input type="date" value={form.billingDate} onChange={e => setForm(f => ({...f, billingDate: e.target.value}))} style={inputStyle} />
+        </Field>
+        <Field label="정산일">
+          <input type="date" value={form.settleDate} onChange={e => setForm(f => ({...f, settleDate: e.target.value}))} style={inputStyle} />
+        </Field>
+      </div>
+      <Field label="메모" style={{ marginTop: 10 }}>
+        <input value={form.memo} onChange={e => setForm(f => ({...f, memo: e.target.value}))} placeholder="메모" style={inputStyle} />
+      </Field>
+      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+        <button onClick={onSave} disabled={saving} style={{ padding: '9px 20px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+          {saving ? '저장 중...' : (isEdit ? '수정 완료' : '저장')}
+        </button>
+        <button onClick={onClose} style={{ padding: '9px 16px', background: '#f5f5f7', color: COLORS.textSecondary, border: 'none', borderRadius: 10, fontSize: 13, cursor: 'pointer' }}>취소</button>
+      </div>
     </div>
   )
 }

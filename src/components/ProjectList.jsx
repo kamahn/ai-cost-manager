@@ -7,22 +7,30 @@ const STATUS_LIST = ['진행중', '완료', '정산완료']
 function empty() { return { name: '', client: '', status: '진행중' } }
 
 export default function ProjectList({ projects, payments, subscriptions, onRefresh, loading }) {
-  const [showForm, setShowForm] = useState(false)
-  const [editItem, setEditItem] = useState(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editId, setEditId] = useState(null)
   const [form, setForm] = useState(empty())
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
 
-  const openAdd = () => { setForm(empty()); setEditItem(null); setShowForm(true) }
-  const openEdit = (item) => { setForm({ ...item }); setEditItem(item); setShowForm(true) }
-  const closeForm = () => { setShowForm(false); setEditItem(null) }
+  const openAdd = () => { setForm(empty()); setEditId(null); setShowAddForm(true) }
+  const openEdit = (item) => {
+    setShowAddForm(false)
+    setForm({ ...item })
+    setEditId(item.id)
+  }
+  const closeForm = () => { setShowAddForm(false); setEditId(null) }
 
   const save = async () => {
     if (!form.name) return
     setSaving(true)
     try {
-      if (editItem) { await updateProject({ ...editItem, ...form }) }
-      else { await addProject(form) }
+      if (editId) {
+        const original = projects.find(p => p.id === editId)
+        await updateProject({ ...original, ...form })
+      } else {
+        await addProject(form)
+      }
       closeForm(); onRefresh()
     } finally { setSaving(false) }
   }
@@ -32,17 +40,17 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
     await deleteProject(item); onRefresh()
   }
 
-  // 프로젝트별 비용 집계
   const getProjectStats = (projectId) => {
-    const pPayments = payments.filter(p => p.project === projectId)
-    const pSubs = subscriptions.filter(s => s.project === projectId)
-    const all = [...pPayments, ...pSubs]
+    const all = [
+      ...payments.filter(p => p.project === projectId),
+      ...subscriptions.filter(s => s.project === projectId)
+    ]
     return {
       total: all.reduce((s, r) => s + toKRW(r.amount, r.currency), 0),
       unsettled: all.filter(r => r.settleStatus === '미청구').reduce((s, r) => s + toKRW(r.amount, r.currency), 0),
       billed: all.filter(r => r.settleStatus === '청구완료').reduce((s, r) => s + toKRW(r.amount, r.currency), 0),
       settled: all.filter(r => r.settleStatus === '정산완료').reduce((s, r) => s + toKRW(r.amount, r.currency), 0),
-      count: all.length,
+      items: all,
     }
   }
 
@@ -53,29 +61,9 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
         <button onClick={openAdd} style={{ padding: '8px 16px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ 추가</button>
       </div>
 
-      {showForm && (
-        <div style={{ background: '#fff', borderRadius: 16, border: `2px solid ${COLORS.primary}`, padding: '16px', marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{editItem ? '프로젝트 수정' : '프로젝트 추가'}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label="프로젝트명" style={{ gridColumn: '1/-1' }}>
-              <input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} placeholder="프로젝트명" style={inputStyle} />
-            </Field>
-            <Field label="광고주">
-              <input value={form.client} onChange={e => setForm(f => ({...f, client: e.target.value}))} placeholder="광고주명" style={inputStyle} />
-            </Field>
-            <Field label="상태">
-              <select value={form.status} onChange={e => setForm(f => ({...f, status: e.target.value}))} style={inputStyle}>
-                {STATUS_LIST.map(s => <option key={s}>{s}</option>)}
-              </select>
-            </Field>
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-            <button onClick={save} disabled={saving} style={{ padding: '9px 20px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-              {saving ? '저장 중...' : (editItem ? '수정 완료' : '저장')}
-            </button>
-            <button onClick={closeForm} style={{ padding: '9px 16px', background: '#f5f5f7', color: COLORS.textSecondary, border: 'none', borderRadius: 10, fontSize: 13, cursor: 'pointer' }}>취소</button>
-          </div>
-        </div>
+      {/* 추가 폼 */}
+      {showAddForm && (
+        <ProjectForm form={form} setForm={setForm} onSave={save} onClose={closeForm} saving={saving} isEdit={false} />
       )}
 
       {loading ? (
@@ -86,8 +74,20 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
         const stats = getProjectStats(p.id)
         const sc = PROJECT_STATUS_COLORS[p.status] || PROJECT_STATUS_COLORS['진행중']
         const isOpen = selected === p.id
+        const isEditing = editId === p.id
+
+        // 인라인 수정 폼
+        if (isEditing) {
+          return (
+            <div key={p.id} style={{ marginBottom: 10 }}>
+              <ProjectForm form={form} setForm={setForm} onSave={save} onClose={closeForm} saving={saving} isEdit={true} />
+            </div>
+          )
+        }
+
         return (
           <div key={p.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5ea', marginBottom: 10, overflow: 'hidden' }}>
+            {/* 헤더 (클릭시 펼치기) */}
             <div onClick={() => setSelected(isOpen ? null : p.id)} style={{ padding: '14px 16px', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -95,18 +95,22 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
                     <span style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                     <span style={{ fontSize: 10, padding: '2px 8px', background: sc.bg, color: sc.text, borderRadius: 20, flexShrink: 0 }}>{p.status}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: COLORS.textSecondary }}>{p.client} · {stats.count}건</div>
+                  <div style={{ fontSize: 11, color: COLORS.textSecondary }}>{p.client} · {stats.items.length}건</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{fmt(stats.total)}원</div>
                   <div style={{ fontSize: 10, color: '#E24B4A' }}>미청구 {fmt(stats.unsettled)}원</div>
                 </div>
+                <span style={{ fontSize: 14, color: COLORS.textSecondary, marginLeft: 4 }}>{isOpen ? '▲' : '▼'}</span>
               </div>
             </div>
 
+            {/* 펼쳐진 상세 */}
             {isOpen && (
-              <div style={{ borderTop: '1px solid #f5f5f7', padding: '12px 16px', background: '#fafafa' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+              <div style={{ borderTop: '1px solid #f0f0f5', background: '#fafafa' }}>
+
+                {/* 정산 요약 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '12px 16px' }}>
                   {[
                     { label: '미청구', value: stats.unsettled, color: '#E65100' },
                     { label: '청구완료', value: stats.billed, color: '#0D47A1' },
@@ -118,15 +122,76 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
                     </div>
                   ))}
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={(e) => { e.stopPropagation(); openEdit(p) }} style={{ flex: 1, padding: '6px', background: '#f5f5f7', border: 'none', borderRadius: 8, fontSize: 12, color: COLORS.textSecondary, cursor: 'pointer' }}>수정</button>
-                  <button onClick={(e) => { e.stopPropagation(); remove(p) }} style={{ flex: 1, padding: '6px', background: '#FFF0F0', border: 'none', borderRadius: 8, fontSize: 12, color: '#E24B4A', cursor: 'pointer' }}>삭제</button>
+
+                {/* 결제 내역 리스트 */}
+                {stats.items.length > 0 && (
+                  <div style={{ padding: '0 16px 12px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.textSecondary, marginBottom: 8 }}>결제 내역</div>
+                    <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #e5e5ea', overflow: 'hidden' }}>
+                      {stats.items.sort((a, b) => new Date(b.date || b.startDate) - new Date(a.date || a.startDate)).map((item, i) => {
+                        const sc2 = SETTLE_COLORS[item.settleStatus] || SETTLE_COLORS['미청구']
+                        const isLast = i === stats.items.length - 1
+                        return (
+                          <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: isLast ? 'none' : '1px solid #f5f5f7' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {item.service?.replace(/^[^\s]+\s/, '') || item.service}
+                              </div>
+                              <div style={{ fontSize: 10, color: COLORS.textSecondary, marginTop: 1 }}>
+                                {item.date || item.startDate} {item.cycle && `· ${item.cycle}`}
+                              </div>
+                            </div>
+                            <span style={{ fontSize: 9, padding: '2px 6px', background: sc2.bg, color: sc2.text, borderRadius: 20, flexShrink: 0 }}>{item.settleStatus}</span>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 600 }}>
+                                {item.currency !== 'KRW' ? `${item.currency} ${item.amount.toLocaleString()}` : `${fmt(item.amount)}원`}
+                              </div>
+                              {item.currency !== 'KRW' && <div style={{ fontSize: 9, color: COLORS.textSecondary }}>≈{fmt(toKRW(item.amount, item.currency))}원</div>}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 수정/삭제 버튼 */}
+                <div style={{ display: 'flex', gap: 6, padding: '0 16px 12px' }}>
+                  <button onClick={(e) => { e.stopPropagation(); openEdit(p) }} style={{ flex: 1, padding: '7px', background: '#f5f5f7', border: 'none', borderRadius: 8, fontSize: 12, color: COLORS.textSecondary, cursor: 'pointer' }}>수정</button>
+                  <button onClick={(e) => { e.stopPropagation(); remove(p) }} style={{ flex: 1, padding: '7px', background: '#FFF0F0', border: 'none', borderRadius: 8, fontSize: 12, color: '#E24B4A', cursor: 'pointer' }}>삭제</button>
                 </div>
               </div>
             )}
           </div>
         )
       })}
+    </div>
+  )
+}
+
+function ProjectForm({ form, setForm, onSave, onClose, saving, isEdit }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: `2px solid ${COLORS.primary}`, padding: '16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{isEdit ? '프로젝트 수정' : '프로젝트 추가'}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <Field label="프로젝트명" style={{ gridColumn: '1/-1' }}>
+          <input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} placeholder="프로젝트명" style={inputStyle} />
+        </Field>
+        <Field label="광고주">
+          <input value={form.client} onChange={e => setForm(f => ({...f, client: e.target.value}))} placeholder="광고주명" style={inputStyle} />
+        </Field>
+        <Field label="상태">
+          <select value={form.status} onChange={e => setForm(f => ({...f, status: e.target.value}))} style={inputStyle}>
+            {['진행중', '완료', '정산완료'].map(s => <option key={s}>{s}</option>)}
+          </select>
+        </Field>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+        <button onClick={onSave} disabled={saving} style={{ padding: '9px 20px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+          {saving ? '저장 중...' : (isEdit ? '수정 완료' : '저장')}
+        </button>
+        <button onClick={onClose} style={{ padding: '9px 16px', background: '#f5f5f7', color: COLORS.textSecondary, border: 'none', borderRadius: 10, fontSize: 13, cursor: 'pointer' }}>취소</button>
+      </div>
     </div>
   )
 }
