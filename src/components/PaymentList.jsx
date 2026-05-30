@@ -143,23 +143,31 @@ export default function PaymentList({ payments, projects, services, onRefresh, l
 
 function PaymentForm({ form, setForm, onSave, onClose, saving, isEdit, projects, services }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 16, border: `2px solid ${COLORS.primary}`, padding: '16px', marginBottom: 10, overflow: 'hidden', boxSizing: 'border-box' }}>
+    <div style={{ background: '#fff', borderRadius: 16, border: `2px solid ${COLORS.primary}`, padding: '16px', marginBottom: 10, boxSizing: 'border-box', width: '100%' }}>
       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{isEdit ? '결제 수정' : '결제 추가'}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <Field label="날짜" style={{ gridColumn: '1/-1' }}>
-          <input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} style={inputStyle} />
-        </Field>
-        <Field label="서비스" style={{ gridColumn: '1/-1' }}>
-          <ServiceSelect value={form.service} onChange={v => setForm(f => ({...f, service: v}))} services={services} />
-        </Field>
-        <Field label="금액" style={{ gridColumn: '1/-1' }}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <select value={form.currency} onChange={e => setForm(f => ({...f, currency: e.target.value}))} style={{ ...inputStyle, width: 80, flexShrink: 0 }}>
-              {['USD','KRW','EUR'].map(c => <option key={c}>{c}</option>)}
-            </select>
-            <input type="number" value={form.amount} onChange={e => setForm(f => ({...f, amount: e.target.value}))} placeholder="0" style={{ ...inputStyle, flex: 1, minWidth: 0 }} />
-          </div>
-        </Field>
+
+      {/* 날짜 - 전체 폭 */}
+      <Field label="날짜" style={{ marginBottom: 10 }}>
+        <input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} style={inputStyle} />
+      </Field>
+
+      {/* 서비스 - 전체 폭 */}
+      <Field label="서비스" style={{ marginBottom: 10 }}>
+        <ServiceSelect value={form.service} onChange={v => setForm(f => ({...f, service: v}))} services={services} />
+      </Field>
+
+      {/* 금액 - 전체 폭 */}
+      <Field label="금액" style={{ marginBottom: 10 }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <select value={form.currency} onChange={e => setForm(f => ({...f, currency: e.target.value}))} style={{ ...inputStyle, width: 80, flexShrink: 0 }}>
+            {['USD','KRW','EUR'].map(c => <option key={c}>{c}</option>)}
+          </select>
+          <input type="number" value={form.amount} onChange={e => setForm(f => ({...f, amount: e.target.value}))} placeholder="0" style={{ ...inputStyle, flex: 1, minWidth: 0 }} />
+        </div>
+      </Field>
+
+      {/* 프로젝트 + 정산상태 나란히 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
         <Field label="프로젝트">
           <select value={form.project} onChange={e => setForm(f => ({...f, project: e.target.value}))} style={inputStyle}>
             <option value="">미지정</option>
@@ -171,17 +179,22 @@ function PaymentForm({ form, setForm, onSave, onClose, saving, isEdit, projects,
             {['미청구','청구완료','정산완료'].map(s => <option key={s}>{s}</option>)}
           </select>
         </Field>
-        <Field label="청구일">
-          <input type="date" value={form.billingDate} onChange={e => setForm(f => ({...f, billingDate: e.target.value}))} style={inputStyle} />
-        </Field>
-        <Field label="정산일">
-          <input type="date" value={form.settleDate} onChange={e => setForm(f => ({...f, settleDate: e.target.value}))} style={inputStyle} />
-        </Field>
       </div>
-      <Field label="메모" style={{ marginTop: 10 }}>
+
+      {/* 청구일 + 정산일 - 각각 전체 폭 1열 */}
+      <Field label="청구일" style={{ marginBottom: 10 }}>
+        <input type="date" value={form.billingDate} onChange={e => setForm(f => ({...f, billingDate: e.target.value}))} style={inputStyle} />
+      </Field>
+      <Field label="정산일" style={{ marginBottom: 10 }}>
+        <input type="date" value={form.settleDate} onChange={e => setForm(f => ({...f, settleDate: e.target.value}))} style={inputStyle} />
+      </Field>
+
+      {/* 메모 */}
+      <Field label="메모" style={{ marginBottom: 14 }}>
         <input value={form.memo} onChange={e => setForm(f => ({...f, memo: e.target.value}))} placeholder="메모" style={inputStyle} />
       </Field>
-      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+
+      <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={onSave} disabled={saving} style={{ padding: '9px 20px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
           {saving ? '저장 중...' : (isEdit ? '수정 완료' : '저장')}
         </button>
