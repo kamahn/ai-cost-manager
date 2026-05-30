@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { COLORS, SETTLE_COLORS, fmt } from '../styles.js'
 import { toKRW } from '../sheets.js'
+import ServiceIcon from './ServiceIcon.jsx'
 
 const CHART_COLORS = ['#7F77DD','#1D9E75','#D85A30','#378ADD','#D4537E','#639922','#BA7517','#E24B4A','#0F6E56','#888780']
 
@@ -126,7 +127,9 @@ export default function Dashboard({ payments, subscriptions, projects, onCheckAl
           return (
             <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #f5f5f7' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.service?.replace(/^[^\s]+\s/, '')}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <ServiceIcon serviceName={p.service} size={15} style={{ fontSize: 13, fontWeight: 500 }} />
+                </div>
                 <div style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 2 }}>{p.date}</div>
               </div>
               <span style={{ fontSize: 10, padding: '3px 8px', background: sc.bg, color: sc.text, borderRadius: 20, flexShrink: 0 }}>{p.settleStatus}</span>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { COLORS, SETTLE_COLORS, fmt } from '../styles.js'
+import ServiceIcon from './ServiceIcon.jsx'
 import { toKRW, addSubscription, updateSubscription, deleteSubscription } from '../sheets.js'
 
 const SETTLE_LIST = ['미청구', '청구완료', '정산완료']
@@ -100,7 +101,7 @@ export default function SubscriptionList({ subscriptions, projects, services, on
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 14, fontWeight: 600 }}>{s.service?.replace(/^[^\s]+\s/, '') || s.service}</span>
+                  <ServiceIcon serviceName={s.service} size={16} style={{ fontSize: 14, fontWeight: 600 }} />
                   <span style={{ fontSize: 10, padding: '2px 7px', background: '#f5f5f7', color: COLORS.textSecondary, borderRadius: 20 }}>{s.cycle}</span>
                   <span style={{ fontSize: 10, padding: '2px 8px', background: sc.bg, color: sc.text, borderRadius: 20 }}>{s.settleStatus}</span>
                   {isUrgent && <span style={{ fontSize: 10, padding: '2px 8px', background: '#FFF3E0', color: '#E65100', borderRadius: 20, fontWeight: 600 }}>갱신 {daysLeft}일 후</span>}

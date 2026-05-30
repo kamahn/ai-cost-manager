@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { COLORS, PROJECT_STATUS_COLORS, SETTLE_COLORS, fmt } from '../styles.js'
 import { toKRW, addProject, updateProject, deleteProject } from '../sheets.js'
+import ServiceIcon from './ServiceIcon.jsx'
 
 const STATUS_LIST = ['진행중', '완료', '정산완료']
 
@@ -135,7 +136,7 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
                           <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: isLast ? 'none' : '1px solid #f5f5f7' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {item.service?.replace(/^[^\s]+\s/, '') || item.service}
+                                <ServiceIcon serviceName={item.service} size={14} style={{ fontSize: 12, fontWeight: 500 }} />
                               </div>
                               <div style={{ fontSize: 10, color: COLORS.textSecondary, marginTop: 1 }}>
                                 {item.date || item.startDate} {item.cycle && `· ${item.cycle}`}
