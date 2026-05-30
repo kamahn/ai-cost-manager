@@ -13,6 +13,7 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
   const [form, setForm] = useState(empty())
   const [saving, setSaving] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [search, setSearch] = useState('')
 
   const openAdd = () => { setForm(empty()); setEditId(null); setShowAddForm(true) }
   const openEdit = (item) => {
@@ -55,11 +56,20 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
     }
   }
 
+  const filteredProjects = projects.filter(p => {
+    if (!search) return true
+    return p.name?.toLowerCase().includes(search.toLowerCase()) || p.client?.toLowerCase().includes(search.toLowerCase())
+  })
+
   return (
     <div style={{ padding: '0 16px 24px' }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
-        <div style={{ flex: 1, fontSize: 13, color: COLORS.textSecondary }}>{projects.length}개 프로젝트</div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+        <SearchBar value={search} onChange={setSearch} placeholder="프로젝트명, 광고주 검색..." />
         <button onClick={openAdd} style={{ padding: '8px 16px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ 추가</button>
+      </div>
+
+      <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 12 }}>
+        {filteredProjects.length}개 프로젝트
       </div>
 
       {/* 추가 폼 */}
@@ -69,9 +79,9 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: COLORS.textSecondary }}>불러오는 중...</div>
-      ) : projects.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: COLORS.textSecondary, fontSize: 13 }}>프로젝트가 없습니다</div>
-      ) : projects.map(p => {
+      ) : filteredProjects.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: COLORS.textSecondary, fontSize: 13 }}>검색 결과가 없습니다</div>
+      ) : filteredProjects.map(p => {
         const stats = getProjectStats(p.id)
         const sc = PROJECT_STATUS_COLORS[p.status] || PROJECT_STATUS_COLORS['진행중']
         const isOpen = selected === p.id
@@ -202,6 +212,26 @@ function Field({ label, children, style }) {
     <div style={style}>
       <label style={{ display: 'block', fontSize: 11, color: '#6e6e73', marginBottom: 4 }}>{label}</label>
       {children}
+    </div>
+  )
+}
+
+function SearchBar({ value, onChange, placeholder = '검색...' }) {
+  return (
+    <div style={{ position: 'relative', flex: 1 }}>
+      <input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{ width: '100%', padding: '8px 32px 8px 12px', borderRadius: 10, border: '1px solid #d2d2d7', fontSize: 13, background: '#fff', boxSizing: 'border-box' }}
+      />
+      {value && (
+        <button
+          onClick={() => onChange('')}
+          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: '#d2d2d7', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: 10, color: '#fff', lineHeight: 1 }}>
+          ✕
+        </button>
+      )}
     </div>
   )
 }
