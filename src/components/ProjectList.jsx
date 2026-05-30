@@ -119,8 +119,8 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => openEdit(p)} style={{ flex: 1, padding: '6px', background: '#f5f5f7', border: 'none', borderRadius: 8, fontSize: 12, color: COLORS.textSecondary, cursor: 'pointer' }}>수정</button>
-                  <button onClick={() => remove(p)} style={{ flex: 1, padding: '6px', background: '#FFF0F0', border: 'none', borderRadius: 8, fontSize: 12, color: '#E24B4A', cursor: 'pointer' }}>삭제</button>
+                  <button onClick={(e) => { e.stopPropagation(); openEdit(p) }} style={{ flex: 1, padding: '6px', background: '#f5f5f7', border: 'none', borderRadius: 8, fontSize: 12, color: COLORS.textSecondary, cursor: 'pointer' }}>수정</button>
+                  <button onClick={(e) => { e.stopPropagation(); remove(p) }} style={{ flex: 1, padding: '6px', background: '#FFF0F0', border: 'none', borderRadius: 8, fontSize: 12, color: '#E24B4A', cursor: 'pointer' }}>삭제</button>
                 </div>
               </div>
             )}
