@@ -15,6 +15,11 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
   const [selected, setSelected] = useState(null)
   const [search, setSearch] = useState('')
 
+  const handleSort = (val) => {
+    if (sortBy === val) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(val); setSortDir('desc') }
+  }
+
   const openAdd = () => { setForm(empty()); setEditId(null); setShowAddForm(true) }
   const openEdit = (item) => {
     setShowAddForm(false)
@@ -67,14 +72,15 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
       return p.name?.toLowerCase().includes(search.toLowerCase()) || p.client?.toLowerCase().includes(search.toLowerCase())
     })
     .sort((a, b) => {
-      if (sortBy === 'latest') return projects.indexOf(b) - projects.indexOf(a)
-      if (sortBy === 'name') return a.name.localeCompare(b.name, 'ko')
+      const dir = sortDir === 'asc' ? 1 : -1
+      if (sortBy === 'latest') return dir * (projects.indexOf(a) - projects.indexOf(b))
+      if (sortBy === 'name')   return dir * a.name.localeCompare(b.name, 'ko')
       if (sortBy === 'cost') {
         const aTotal = [...payments, ...subscriptions].filter(r => r.project === a.id).reduce((s, r) => s + toKRW(r.amount, r.currency), 0)
         const bTotal = [...payments, ...subscriptions].filter(r => r.project === b.id).reduce((s, r) => s + toKRW(r.amount, r.currency), 0)
-        return bTotal - aTotal
+        return dir * (aTotal - bTotal)
       }
-      if (sortBy === 'status') return (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9)
+      if (sortBy === 'status') return dir * ((STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9))
       return 0
     })
 
@@ -85,24 +91,12 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
         <button onClick={openAdd} style={{ padding: '8px 16px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ 추가</button>
       </div>
 
-      {/* 정렬 선택 */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-        {[
-          { value: 'latest', label: '최신순' },
-          { value: 'name',   label: '이름순' },
-          { value: 'cost',   label: '비용순' },
-          { value: 'status', label: '정산상태순' },
-        ].map(s => (
-          <button key={s.value} onClick={() => setSortBy(s.value)}
-            style={{ fontSize: 11, padding: '5px 10px', borderRadius: 20,
-              border: '1px solid ' + (sortBy === s.value ? COLORS.primary : '#d2d2d7'),
-              background: sortBy === s.value ? COLORS.primaryLight : '#fff',
-              color: sortBy === s.value ? COLORS.primary : COLORS.textSecondary,
-              cursor: 'pointer', fontWeight: sortBy === s.value ? 600 : 400 }}>
-            {s.label}
-          </button>
-        ))}
-      </div>
+      <SortBar sortBy={sortBy} sortDir={sortDir} onSort={handleSort} options={[
+        { value: 'latest', label: '최신순' },
+        { value: 'name',   label: '이름순' },
+        { value: 'cost',   label: '비용순' },
+        { value: 'status', label: '정산상태순' },
+      ]} />
 
       <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 12 }}>
         {filteredProjects.length}개 프로젝트
@@ -248,6 +242,30 @@ function Field({ label, children, style }) {
     <div style={style}>
       <label style={{ display: 'block', fontSize: 11, color: '#6e6e73', marginBottom: 4 }}>{label}</label>
       {children}
+    </div>
+  )
+}
+
+function SortBar({ sortBy, sortDir, onSort, options }) {
+  return (
+    <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+      {options.map(s => {
+        const active = sortBy === s.value
+        return (
+          <button key={s.value} onClick={() => onSort(s.value)}
+            style={{ display: 'flex', alignItems: 'center', gap: 3,
+              fontSize: 11, padding: '5px 10px', borderRadius: 20,
+              border: '1px solid ' + (active ? COLORS.primary : '#d2d2d7'),
+              background: active ? COLORS.primaryLight : '#fff',
+              color: active ? COLORS.primary : COLORS.textSecondary,
+              cursor: 'pointer', fontWeight: active ? 600 : 400 }}>
+            {s.label}
+            {active && (
+              <span style={{ fontSize: 10 }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
+            )}
+          </button>
+        )
+      })}
     </div>
   )
 }

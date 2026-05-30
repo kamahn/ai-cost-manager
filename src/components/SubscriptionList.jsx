@@ -20,6 +20,7 @@ export default function SubscriptionList({ subscriptions, projects, services, on
   const [search, setSearch] = useState('')
 
   const [sortBy, setSortBy] = useState('renew')
+  const [sortDir, setSortDir] = useState('asc')
   const SETTLE_ORDER = { '미청구': 0, '청구완료': 1, '정산완료': 2 }
 
   const projectMap = {}
@@ -40,16 +41,22 @@ export default function SubscriptionList({ subscriptions, projects, services, on
       return statusOk && searchOk
     })
     .sort((a, b) => {
-      if (sortBy === 'renew')   return new Date(a.renewDate || '9999') - new Date(b.renewDate || '9999')
-      if (sortBy === 'amount')  return toKRW(b.amount, b.currency) - toKRW(a.amount, a.currency)
-      if (sortBy === 'service') return (a.service || '').localeCompare(b.service || '', 'ko')
-      if (sortBy === 'status')  return (SETTLE_ORDER[a.settleStatus] ?? 9) - (SETTLE_ORDER[b.settleStatus] ?? 9)
+      const dir = sortDir === 'asc' ? 1 : -1
+      if (sortBy === 'renew')   return dir * (new Date(a.renewDate || '9999') - new Date(b.renewDate || '9999'))
+      if (sortBy === 'amount')  return dir * (toKRW(a.amount, a.currency) - toKRW(b.amount, b.currency))
+      if (sortBy === 'service') return dir * (a.service || '').localeCompare(b.service || '', 'ko')
+      if (sortBy === 'status')  return dir * ((SETTLE_ORDER[a.settleStatus] ?? 9) - (SETTLE_ORDER[b.settleStatus] ?? 9))
       return 0
     })
 
   const getDaysLeft = (renewDate) => {
     if (!renewDate) return null
     return Math.ceil((new Date(renewDate) - today) / 86400000)
+  }
+
+  const handleSort = (val) => {
+    if (sortBy === val) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(val); setSortDir('asc') }
   }
 
   const openAdd = () => { setForm(empty()); setEditId(null); setShowAddForm(true) }
@@ -93,24 +100,12 @@ export default function SubscriptionList({ subscriptions, projects, services, on
         ))}
       </div>
 
-      {/* 정렬 */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-        {[
-          { value: 'renew',   label: '갱신일순' },
-          { value: 'amount',  label: '금액순' },
-          { value: 'service', label: '서비스순' },
-          { value: 'status',  label: '정산상태순' },
-        ].map(s => (
-          <button key={s.value} onClick={() => setSortBy(s.value)}
-            style={{ fontSize: 11, padding: '5px 10px', borderRadius: 20,
-              border: '1px solid ' + (sortBy === s.value ? COLORS.primary : '#d2d2d7'),
-              background: sortBy === s.value ? COLORS.primaryLight : '#fff',
-              color: sortBy === s.value ? COLORS.primary : COLORS.textSecondary,
-              cursor: 'pointer', fontWeight: sortBy === s.value ? 600 : 400 }}>
-            {s.label}
-          </button>
-        ))}
-      </div>
+      <SortBar sortBy={sortBy} sortDir={sortDir} onSort={handleSort} options={[
+        { value: 'renew',   label: '갱신일순' },
+        { value: 'amount',  label: '금액순' },
+        { value: 'service', label: '서비스순' },
+        { value: 'status',  label: '정산상태순' },
+      ]} />
 
       <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 12 }}>
         {filtered.length}개 구독
@@ -247,6 +242,30 @@ function SubForm({ form, setForm, onSave, onClose, saving, isEdit, projects, ser
         </button>
         <button onClick={onClose} style={{ padding: '9px 16px', background: '#f5f5f7', color: COLORS.textSecondary, border: 'none', borderRadius: 10, fontSize: 13, cursor: 'pointer' }}>취소</button>
       </div>
+    </div>
+  )
+}
+
+function SortBar({ sortBy, sortDir, onSort, options }) {
+  return (
+    <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+      {options.map(s => {
+        const active = sortBy === s.value
+        return (
+          <button key={s.value} onClick={() => onSort(s.value)}
+            style={{ display: 'flex', alignItems: 'center', gap: 3,
+              fontSize: 11, padding: '5px 10px', borderRadius: 20,
+              border: '1px solid ' + (active ? COLORS.primary : '#d2d2d7'),
+              background: active ? COLORS.primaryLight : '#fff',
+              color: active ? COLORS.primary : COLORS.textSecondary,
+              cursor: 'pointer', fontWeight: active ? 600 : 400 }}>
+            {s.label}
+            {active && (
+              <span style={{ fontSize: 10 }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
+            )}
+          </button>
+        )
+      })}
     </div>
   )
 }
