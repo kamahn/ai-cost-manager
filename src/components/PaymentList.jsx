@@ -39,7 +39,7 @@ export default function PaymentList({ payments, projects, services, onRefresh, l
     setSaving(true)
     try {
       if (editItem) {
-        await updatePayment(editItem._row, { ...form, amount: parseFloat(form.amount) })
+        await updatePayment({ ...editItem, ...form, amount: parseFloat(form.amount) })
       } else {
         await addPayment({ ...form, amount: parseFloat(form.amount) })
       }
@@ -50,7 +50,7 @@ export default function PaymentList({ payments, projects, services, onRefresh, l
 
   const remove = async (item) => {
     if (!window.confirm(`"${item.service}" 결제 내역을 삭제할까요?`)) return
-    await deletePayment(item._row)
+    await deletePayment(item)
     onRefresh()
   }
 

@@ -32,7 +32,7 @@ async function updateRange(range, values) {
   return res.json()
 }
 
-// 행 삭제 (시트ID 필요)
+// 행 삭제
 async function deleteRow(sheetId, rowIndex) {
   const res = await fetch(`${BASE_URL}/${SPREADSHEET_ID}:batchUpdate`, {
     method: 'POST',
@@ -57,11 +57,20 @@ async function getSheetIds() {
   return map
 }
 
-// 쉼표 포함 금액 문자열 파싱 (예: "1,789,044" → 1789044)
+// 쉼표 포함 금액 문자열 파싱
 function parseAmount(val) {
   if (!val) return 0
   const cleaned = String(val).replace(/,/g, '')
   return parseFloat(cleaned) || 0
+}
+
+// ID로 실제 행 번호 찾기 (정렬 후 _row 불일치 문제 해결)
+async function findRowById(sheetName, id) {
+  const rows = await readSheet(`${sheetName}!A:A`)
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === id) return i + 1  // 1-indexed
+  }
+  return null
 }
 
 // ── 결제내역 ──────────────────────────────────────────
@@ -73,7 +82,7 @@ export async function getPayments() {
   return data
     .filter(r => r[0])
     .map((r, i) => ({
-      _row: i + 2,
+      _row: i + 2,  // 원본 시트 위치 (정렬 전)
       id: r[0] || '',
       date: r[1] || '',
       service: r[2] || '',
@@ -94,11 +103,20 @@ export async function addPayment(p) {
   return id
 }
 
-export async function updatePayment(rowNum, p) {
-  await updateRange(`결제내역!A${rowNum}:J${rowNum}`, [[p.id, p.date, p.service, p.project, p.currency, p.amount, p.memo, p.settleStatus, p.billingDate || '', p.settleDate || '']])
+export async function updatePayment(item) {
+  // ID로 실제 행 번호를 다시 찾아서 업데이트 (정렬 후 _row 오차 방지)
+  const rowNum = await findRowById('결제내역', item.id)
+  if (!rowNum) throw new Error('행을 찾을 수 없습니다: ' + item.id)
+  await updateRange(`결제내역!A${rowNum}:J${rowNum}`, [[
+    item.id, item.date, item.service, item.project,
+    item.currency, item.amount, item.memo,
+    item.settleStatus, item.billingDate || '', item.settleDate || ''
+  ]])
 }
 
-export async function deletePayment(rowNum) {
+export async function deletePayment(item) {
+  const rowNum = await findRowById('결제내역', item.id)
+  if (!rowNum) return
   const ids = await getSheetIds()
   await deleteRow(ids['결제내역'], rowNum - 1)
 }
@@ -135,11 +153,19 @@ export async function addSubscription(s) {
   return id
 }
 
-export async function updateSubscription(rowNum, s) {
-  await updateRange(`구독목록!A${rowNum}:L${rowNum}`, [[s.id, s.service, s.cycle, s.currency, s.amount, s.startDate, s.renewDate, s.project, s.memo || '', s.settleStatus, s.billingDate || '', s.settleDate || '']])
+export async function updateSubscription(item) {
+  const rowNum = await findRowById('구독목록', item.id)
+  if (!rowNum) throw new Error('행을 찾을 수 없습니다: ' + item.id)
+  await updateRange(`구독목록!A${rowNum}:L${rowNum}`, [[
+    item.id, item.service, item.cycle, item.currency,
+    item.amount, item.startDate, item.renewDate, item.project,
+    item.memo || '', item.settleStatus, item.billingDate || '', item.settleDate || ''
+  ]])
 }
 
-export async function deleteSubscription(rowNum) {
+export async function deleteSubscription(item) {
+  const rowNum = await findRowById('구독목록', item.id)
+  if (!rowNum) return
   const ids = await getSheetIds()
   await deleteRow(ids['구독목록'], rowNum - 1)
 }
@@ -165,11 +191,15 @@ export async function addProject(p) {
   return id
 }
 
-export async function updateProject(rowNum, p) {
-  await updateRange(`프로젝트!A${rowNum}:D${rowNum}`, [[p.id, p.name, p.client, p.status]])
+export async function updateProject(item) {
+  const rowNum = await findRowById('프로젝트', item.id)
+  if (!rowNum) throw new Error('행을 찾을 수 없습니다: ' + item.id)
+  await updateRange(`프로젝트!A${rowNum}:D${rowNum}`, [[item.id, item.name, item.client, item.status]])
 }
 
-export async function deleteProject(rowNum) {
+export async function deleteProject(item) {
+  const rowNum = await findRowById('프로젝트', item.id)
+  if (!rowNum) return
   const ids = await getSheetIds()
   await deleteRow(ids['프로젝트'], rowNum - 1)
 }

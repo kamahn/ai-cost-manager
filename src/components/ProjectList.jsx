@@ -21,7 +21,7 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
     if (!form.name) return
     setSaving(true)
     try {
-      if (editItem) { await updateProject(editItem._row, { ...editItem, ...form }) }
+      if (editItem) { await updateProject({ ...editItem, ...form }) }
       else { await addProject(form) }
       closeForm(); onRefresh()
     } finally { setSaving(false) }
@@ -29,7 +29,7 @@ export default function ProjectList({ projects, payments, subscriptions, onRefre
 
   const remove = async (item) => {
     if (!window.confirm(`"${item.name}" 프로젝트를 삭제할까요?`)) return
-    await deleteProject(item._row); onRefresh()
+    await deleteProject(item); onRefresh()
   }
 
   // 프로젝트별 비용 집계

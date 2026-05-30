@@ -39,7 +39,7 @@ export default function SubscriptionList({ subscriptions, projects, services, on
     setSaving(true)
     try {
       if (editItem) {
-        await updateSubscription(editItem._row, { ...form, amount: parseFloat(form.amount) })
+        await updateSubscription({ ...editItem, ...form, amount: parseFloat(form.amount) })
       } else {
         await addSubscription({ ...form, amount: parseFloat(form.amount) })
       }
@@ -50,7 +50,7 @@ export default function SubscriptionList({ subscriptions, projects, services, on
 
   const remove = async (item) => {
     if (!window.confirm(`"${item.service}" 구독을 삭제할까요?`)) return
-    await deleteSubscription(item._row)
+    await deleteSubscription(item)
     onRefresh()
   }
 
