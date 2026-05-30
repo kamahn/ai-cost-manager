@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { loadGoogleAPI, initTokenClient, requestLogin, restoreToken, getAccessToken, logout, fetchUserInfo } from './auth.js'
 import { getPayments, getSubscriptions, getProjects, getServices } from './sheets.js'
 import { checkAndSendRenewalAlerts } from './gmail.js'
@@ -28,6 +28,39 @@ export default function App() {
   const [subscriptions, setSubscriptions] = useState([])
   const [projects, setProjects] = useState([])
   const [services, setServices] = useState([])
+
+  // Pull-to-refresh
+  const [pullY, setPullY] = useState(0)
+  const [isPulling, setIsPulling] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const touchStartY = useRef(0)
+  const scrollRef = useRef(null)
+  const PULL_THRESHOLD = 70
+
+  const handleTouchStart = (e) => {
+    if (scrollRef.current?.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY
+      setIsPulling(true)
+    }
+  }
+
+  const handleTouchMove = (e) => {
+    if (!isPulling) return
+    const dy = e.touches[0].clientY - touchStartY.current
+    if (dy > 0 && scrollRef.current?.scrollTop === 0) {
+      setPullY(Math.min(dy * 0.5, PULL_THRESHOLD + 20))
+    }
+  }
+
+  const handleTouchEnd = async () => {
+    if (pullY >= PULL_THRESHOLD && !refreshing) {
+      setRefreshing(true)
+      await loadAll()
+      setRefreshing(false)
+    }
+    setPullY(0)
+    setIsPulling(false)
+  }
 
   // 구글 API 초기화
   useEffect(() => {
@@ -138,8 +171,34 @@ export default function App() {
         </div>
       )}
 
-      {/* 탭 콘텐츠 */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingTop: 16 }}>
+      {/* 탭 콘텐츠 + Pull-to-refresh */}
+      <div
+        ref={scrollRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ flex: 1, overflowY: 'auto', paddingTop: 16, position: 'relative' }}>
+
+        {/* Pull 인디케이터 */}
+        <div style={{
+          height: pullY > 0 ? pullY : refreshing ? 48 : 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden', transition: pullY > 0 ? 'none' : 'height 0.3s',
+          color: COLORS.primary, fontSize: 13, gap: 6
+        }}>
+          {(pullY >= PULL_THRESHOLD || refreshing) && (
+            <>
+              <span style={{ display: 'inline-block', animation: refreshing ? 'spin 0.8s linear infinite' : 'none', fontSize: 16 }}>↻</span>
+              <span>{refreshing ? '업데이트 중...' : '놓으면 새로고침'}</span>
+            </>
+          )}
+          {pullY > 0 && pullY < PULL_THRESHOLD && (
+            <span style={{ color: COLORS.textSecondary }}>↓ 당겨서 새로고침</span>
+          )}
+        </div>
+
+        <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
+
         {tab !== 'dashboard' && (
           <div style={{ padding: '0 16px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 20 }}>{TABS.find(t => t.id === tab)?.icon}</span>
