@@ -3,6 +3,7 @@ import { COLORS, SETTLE_COLORS, fmt } from '../styles.js'
 import { toKRW, addPayment, updatePayment, deletePayment } from '../sheets.js'
 import ServiceIcon from './ServiceIcon.jsx'
 import ServiceSelect from './ServiceSelect.jsx'
+import DateInput from './DateInput.jsx'
 
 const SETTLE_LIST = ['미청구', '청구완료', '정산완료']
 
@@ -148,7 +149,7 @@ function PaymentForm({ form, setForm, onSave, onClose, saving, isEdit, projects,
 
       {/* 날짜 - 전체 폭 */}
       <Field label="날짜" style={{ marginBottom: 10 }}>
-        <input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} style={inputStyle} />
+        <DateInput value={form.date} onChange={v => setForm(f => ({...f, date: v}))} />
       </Field>
 
       {/* 서비스 - 전체 폭 */}
@@ -184,10 +185,10 @@ function PaymentForm({ form, setForm, onSave, onClose, saving, isEdit, projects,
       {/* 청구일 + 정산일 나란히 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
         <Field label="청구일">
-          <input type="date" value={form.billingDate} onChange={e => setForm(f => ({...f, billingDate: e.target.value}))} style={inputStyle} />
+          <DateInput value={form.billingDate} onChange={v => setForm(f => ({...f, billingDate: v}))} />
         </Field>
         <Field label="정산일">
-          <input type="date" value={form.settleDate} onChange={e => setForm(f => ({...f, settleDate: e.target.value}))} style={inputStyle} />
+          <DateInput value={form.settleDate} onChange={v => setForm(f => ({...f, settleDate: v}))} />
         </Field>
       </div>
 
