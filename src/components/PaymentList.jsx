@@ -181,13 +181,15 @@ function PaymentForm({ form, setForm, onSave, onClose, saving, isEdit, projects,
         </Field>
       </div>
 
-      {/* 청구일 + 정산일 - 각각 전체 폭 1열 */}
-      <Field label="청구일" style={{ marginBottom: 10 }}>
-        <input type="date" value={form.billingDate} onChange={e => setForm(f => ({...f, billingDate: e.target.value}))} style={inputStyle} />
-      </Field>
-      <Field label="정산일" style={{ marginBottom: 10 }}>
-        <input type="date" value={form.settleDate} onChange={e => setForm(f => ({...f, settleDate: e.target.value}))} style={inputStyle} />
-      </Field>
+      {/* 청구일 + 정산일 나란히 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+        <Field label="청구일">
+          <input type="date" value={form.billingDate} onChange={e => setForm(f => ({...f, billingDate: e.target.value}))} style={inputStyle} />
+        </Field>
+        <Field label="정산일">
+          <input type="date" value={form.settleDate} onChange={e => setForm(f => ({...f, settleDate: e.target.value}))} style={inputStyle} />
+        </Field>
+      </div>
 
       {/* 메모 */}
       <Field label="메모" style={{ marginBottom: 14 }}>

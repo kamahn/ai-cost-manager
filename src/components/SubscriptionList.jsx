@@ -155,9 +155,9 @@ function SubForm({ form, setForm, onSave, onClose, saving, isEdit, projects, ser
 
       {/* 금액 + 구독주기 나란히 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-        <Field label="금액" style={{ gridColumn: '1/-1' }}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <select value={form.currency} onChange={e => setForm(f => ({...f, currency: e.target.value}))} style={{ ...inputStyle, width: 80, flexShrink: 0 }}>
+        <Field label="금액">
+          <div style={{ display: 'flex', gap: 4 }}>
+            <select value={form.currency} onChange={e => setForm(f => ({...f, currency: e.target.value}))} style={{ ...inputStyle, width: 60, flexShrink: 0, padding: '8px 4px' }}>
               {['KRW','USD','EUR'].map(c => <option key={c}>{c}</option>)}
             </select>
             <input type="number" value={form.amount} onChange={e => setForm(f => ({...f, amount: e.target.value}))} placeholder="0" style={{ ...inputStyle, flex: 1, minWidth: 0 }} />
@@ -168,29 +168,35 @@ function SubForm({ form, setForm, onSave, onClose, saving, isEdit, projects, ser
             {['월간','연간'].map(c => <option key={c}>{c}</option>)}
           </select>
         </Field>
+      </div>
+
+      {/* 프로젝트 + 정산상태 나란히 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
         <Field label="프로젝트">
           <select value={form.project} onChange={e => setForm(f => ({...f, project: e.target.value}))} style={inputStyle}>
             <option value="">미지정</option>
             {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </Field>
+        <Field label="정산 상태">
+          <select value={form.settleStatus} onChange={e => setForm(f => ({...f, settleStatus: e.target.value}))} style={inputStyle}>
+            {['미청구','청구완료','정산완료'].map(s => <option key={s}>{s}</option>)}
+          </select>
+        </Field>
       </div>
 
-      {/* 정산 상태 - 전체 폭 */}
-      <Field label="정산 상태" style={{ marginBottom: 10 }}>
-        <select value={form.settleStatus} onChange={e => setForm(f => ({...f, settleStatus: e.target.value}))} style={inputStyle}>
-          {['미청구','청구완료','정산완료'].map(s => <option key={s}>{s}</option>)}
-        </select>
-      </Field>
-
-      {/* 날짜 4개 - 각각 전체 폭으로 1열 배치 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, marginBottom: 10 }}>
+      {/* 구독 개시일 + 갱신 예정일 나란히 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
         <Field label="구독 개시일">
           <input type="date" value={form.startDate} onChange={e => setForm(f => ({...f, startDate: e.target.value}))} style={inputStyle} />
         </Field>
         <Field label="갱신 예정일">
           <input type="date" value={form.renewDate} onChange={e => setForm(f => ({...f, renewDate: e.target.value}))} style={inputStyle} />
         </Field>
+      </div>
+
+      {/* 청구일 + 정산일 나란히 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
         <Field label="청구일">
           <input type="date" value={form.billingDate} onChange={e => setForm(f => ({...f, billingDate: e.target.value}))} style={inputStyle} />
         </Field>
@@ -199,7 +205,7 @@ function SubForm({ form, setForm, onSave, onClose, saving, isEdit, projects, ser
         </Field>
       </div>
 
-      {/* 메모 */}
+      {/* 메모 - 전체 폭 */}
       <Field label="메모" style={{ marginBottom: 14 }}>
         <input value={form.memo} onChange={e => setForm(f => ({...f, memo: e.target.value}))} placeholder="메모" style={inputStyle} />
       </Field>
