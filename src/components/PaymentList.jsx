@@ -20,21 +20,32 @@ export default function PaymentList({ payments, projects, services, onRefresh, l
   const [filterProject, setFilterProject] = useState('전체')
   const [search, setSearch] = useState('')
 
+  const [sortBy, setSortBy] = useState('date')
+  const SETTLE_ORDER = { '미청구': 0, '청구완료': 1, '정산완료': 2 }
+
   const projectMap = {}
   projects.forEach(p => { projectMap[p.id] = p.name })
 
   const sortedProjects = [...projects].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 
-  const filtered = payments.filter(p => {
-    const statusOk = filterStatus === '전체' || p.settleStatus === filterStatus
-    const projectOk = filterProject === '전체' || p.project === filterProject
-    const pName = projectMap[p.project] || p.project || ''
-    const searchOk = !search ||
-      p.service?.toLowerCase().includes(search.toLowerCase()) ||
-      p.memo?.toLowerCase().includes(search.toLowerCase()) ||
-      pName.toLowerCase().includes(search.toLowerCase())
-    return statusOk && projectOk && searchOk
-  })
+  const filtered = payments
+    .filter(p => {
+      const statusOk = filterStatus === '전체' || p.settleStatus === filterStatus
+      const projectOk = filterProject === '전체' || p.project === filterProject
+      const pName = projectMap[p.project] || p.project || ''
+      const searchOk = !search ||
+        p.service?.toLowerCase().includes(search.toLowerCase()) ||
+        p.memo?.toLowerCase().includes(search.toLowerCase()) ||
+        pName.toLowerCase().includes(search.toLowerCase())
+      return statusOk && projectOk && searchOk
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date')    return new Date(b.date) - new Date(a.date)
+      if (sortBy === 'amount')  return toKRW(b.amount, b.currency) - toKRW(a.amount, a.currency)
+      if (sortBy === 'service') return (a.service || '').localeCompare(b.service || '', 'ko')
+      if (sortBy === 'status')  return (SETTLE_ORDER[a.settleStatus] ?? 9) - (SETTLE_ORDER[b.settleStatus] ?? 9)
+      return 0
+    })
 
   const totalKRW = filtered.reduce((s, r) => s + toKRW(r.amount, r.currency), 0)
 
@@ -70,7 +81,7 @@ export default function PaymentList({ payments, projects, services, onRefresh, l
       </div>
 
       {/* 필터 */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
         {['전체', ...SETTLE_LIST].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)}
             style={{ fontSize: 11, padding: '5px 10px', borderRadius: 20, border: '1px solid ' + (filterStatus === s ? COLORS.primary : '#d2d2d7'), background: filterStatus === s ? COLORS.primaryLight : '#fff', color: filterStatus === s ? COLORS.primary : COLORS.textSecondary, cursor: 'pointer', fontWeight: filterStatus === s ? 600 : 400 }}>
@@ -82,6 +93,25 @@ export default function PaymentList({ payments, projects, services, onRefresh, l
           <option value="전체">전체 프로젝트</option>
           {sortedProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
+      </div>
+
+      {/* 정렬 */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+        {[
+          { value: 'date',    label: '날짜순' },
+          { value: 'amount',  label: '금액순' },
+          { value: 'service', label: '서비스순' },
+          { value: 'status',  label: '정산상태순' },
+        ].map(s => (
+          <button key={s.value} onClick={() => setSortBy(s.value)}
+            style={{ fontSize: 11, padding: '5px 10px', borderRadius: 20,
+              border: '1px solid ' + (sortBy === s.value ? COLORS.primary : '#d2d2d7'),
+              background: sortBy === s.value ? COLORS.primaryLight : '#fff',
+              color: sortBy === s.value ? COLORS.primary : COLORS.textSecondary,
+              cursor: 'pointer', fontWeight: sortBy === s.value ? 600 : 400 }}>
+            {s.label}
+          </button>
+        ))}
       </div>
 
       <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 12 }}>

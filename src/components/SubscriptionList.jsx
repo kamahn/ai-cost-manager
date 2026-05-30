@@ -19,6 +19,9 @@ export default function SubscriptionList({ subscriptions, projects, services, on
   const [filterStatus, setFilterStatus] = useState('전체')
   const [search, setSearch] = useState('')
 
+  const [sortBy, setSortBy] = useState('renew')
+  const SETTLE_ORDER = { '미청구': 0, '청구완료': 1, '정산완료': 2 }
+
   const projectMap = {}
   projects.forEach(p => { projectMap[p.id] = p.name })
 
@@ -26,15 +29,23 @@ export default function SubscriptionList({ subscriptions, projects, services, on
 
   const today = new Date(); today.setHours(0,0,0,0)
 
-  const filtered = subscriptions.filter(s => {
-    const statusOk = filterStatus === '전체' || s.settleStatus === filterStatus
-    const pName = projectMap[s.project] || s.project || ''
-    const searchOk = !search ||
-      s.service?.toLowerCase().includes(search.toLowerCase()) ||
-      pName.toLowerCase().includes(search.toLowerCase()) ||
-      s.memo?.toLowerCase().includes(search.toLowerCase())
-    return statusOk && searchOk
-  })
+  const filtered = subscriptions
+    .filter(s => {
+      const statusOk = filterStatus === '전체' || s.settleStatus === filterStatus
+      const pName = projectMap[s.project] || s.project || ''
+      const searchOk = !search ||
+        s.service?.toLowerCase().includes(search.toLowerCase()) ||
+        pName.toLowerCase().includes(search.toLowerCase()) ||
+        s.memo?.toLowerCase().includes(search.toLowerCase())
+      return statusOk && searchOk
+    })
+    .sort((a, b) => {
+      if (sortBy === 'renew')   return new Date(a.renewDate || '9999') - new Date(b.renewDate || '9999')
+      if (sortBy === 'amount')  return toKRW(b.amount, b.currency) - toKRW(a.amount, a.currency)
+      if (sortBy === 'service') return (a.service || '').localeCompare(b.service || '', 'ko')
+      if (sortBy === 'status')  return (SETTLE_ORDER[a.settleStatus] ?? 9) - (SETTLE_ORDER[b.settleStatus] ?? 9)
+      return 0
+    })
 
   const getDaysLeft = (renewDate) => {
     if (!renewDate) return null
@@ -73,11 +84,30 @@ export default function SubscriptionList({ subscriptions, projects, services, on
       </div>
 
       {/* 필터 */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
         {['전체', ...SETTLE_LIST].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)}
             style={{ fontSize: 11, padding: '5px 10px', borderRadius: 20, border: '1px solid ' + (filterStatus === s ? COLORS.primary : '#d2d2d7'), background: filterStatus === s ? COLORS.primaryLight : '#fff', color: filterStatus === s ? COLORS.primary : COLORS.textSecondary, cursor: 'pointer', fontWeight: filterStatus === s ? 600 : 400 }}>
             {s}
+          </button>
+        ))}
+      </div>
+
+      {/* 정렬 */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+        {[
+          { value: 'renew',   label: '갱신일순' },
+          { value: 'amount',  label: '금액순' },
+          { value: 'service', label: '서비스순' },
+          { value: 'status',  label: '정산상태순' },
+        ].map(s => (
+          <button key={s.value} onClick={() => setSortBy(s.value)}
+            style={{ fontSize: 11, padding: '5px 10px', borderRadius: 20,
+              border: '1px solid ' + (sortBy === s.value ? COLORS.primary : '#d2d2d7'),
+              background: sortBy === s.value ? COLORS.primaryLight : '#fff',
+              color: sortBy === s.value ? COLORS.primary : COLORS.textSecondary,
+              cursor: 'pointer', fontWeight: sortBy === s.value ? 600 : 400 }}>
+            {s.label}
           </button>
         ))}
       </div>
