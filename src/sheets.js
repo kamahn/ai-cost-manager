@@ -53,6 +53,25 @@ function parseAmount(val) {
   return parseFloat(String(val).replace(/,/g, '')) || 0
 }
 
+// 엑셀/구글시트 날짜 시리얼 넘버 → YYYY-MM-DD 변환
+function parseDate(val) {
+  if (!val) return ''
+  const str = String(val).trim()
+  // 이미 YYYY-MM-DD 형식이면 그대로
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str
+  // 숫자(엑셀 시리얼)이면 변환
+  const num = parseFloat(str)
+  if (!isNaN(num) && num > 1000 && num < 100000) {
+    // 엑셀 시리얼: 1900-01-01 기준, 60번(1900-02-29 버그) 보정
+    const d = new Date(Date.UTC(1899, 11, 30) + num * 86400000)
+    if (!isNaN(d)) return d.toISOString().slice(0, 10)
+  }
+  // 기타 날짜 문자열 파싱 시도
+  const d = new Date(str)
+  if (!isNaN(d)) return d.toISOString().slice(0, 10)
+  return str
+}
+
 async function findRowById(sheetName, id) {
   const rows = await readSheet(`${sheetName}!A:A`)
   for (let i = 1; i < rows.length; i++) {
@@ -72,15 +91,15 @@ export async function getPayments() {
     .map((r, i) => ({
       _row: i + 2,
       id: r[0] || '',
-      date: r[1] || '',
+      date: parseDate(r[1]),
       service: r[2] || '',
       project: r[3] || '',
       currency: r[4] || 'USD',
       amount: parseAmount(r[5]),
       memo: r[6] || '',
       settleStatus: r[7] || '미청구',
-      billingDate: r[8] || '',
-      settleDate: r[9] || '',
+      billingDate: parseDate(r[8]),
+      settleDate: parseDate(r[9]),
       invoiceUrl: r[10] || '',
     }))
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -129,13 +148,13 @@ export async function getSubscriptions() {
       cycle: r[2] || '월간',
       currency: r[3] || 'KRW',
       amount: parseAmount(r[4]),
-      startDate: r[5] || '',
-      renewDate: r[6] || '',
+      startDate: parseDate(r[5]),
+      renewDate: parseDate(r[6]),
       project: r[7] || '',
       memo: r[8] || '',
       settleStatus: r[9] || '미청구',
-      billingDate: r[10] || '',
-      settleDate: r[11] || '',
+      billingDate: parseDate(r[10]),
+      settleDate: parseDate(r[11]),
       invoiceUrl: r[12] || '',
     }))
     .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
