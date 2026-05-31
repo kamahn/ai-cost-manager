@@ -20,7 +20,7 @@ export default function SubscriptionList({ subscriptions, projects, services, on
   const [search, setSearch] = useState('')
 
   const [sortBy, setSortBy] = useState('renew')
-  const [sortDir, setSortDir] = useState('asc')
+  const [sortDir, setSortDir] = useState('desc')
   const SETTLE_ORDER = { '미청구': 0, '청구완료': 1, '정산완료': 2 }
 
   const projectMap = {}
