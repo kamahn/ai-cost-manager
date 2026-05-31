@@ -217,6 +217,8 @@ export default function GmailSync({ projects, services, onRefresh }) {
                       <span style={{ fontSize: 10, padding: '1px 6px', background: email.type === 'subscription' ? '#E3F2FD' : '#FFF3E0', color: email.type === 'subscription' ? '#0D47A1' : '#E65100', borderRadius: 20 }}>
                         {email.type === 'subscription' ? '구독' : '결제'}
                       </span>
+                      {email.hasPdf && <span style={{ fontSize: 10, padding: '1px 6px', background: '#F3E5F5', color: '#6A1B9A', borderRadius: 20 }}>📄 PDF</span>}
+                      {email.invoiceUrl && <span style={{ fontSize: 10, padding: '1px 6px', background: '#E8F5E9', color: '#1B5E20', borderRadius: 20 }}>🔗 링크</span>}
                       {isSaved && <span style={{ fontSize: 10, color: '#4CAF50', fontWeight: 600 }}>저장완료</span>}
                     </div>
                     <div style={{ fontSize: 11, color: COLORS.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -232,21 +234,29 @@ export default function GmailSync({ projects, services, onRefresh }) {
                   </div>
                 </div>
 
-                {/* PDF 버튼 */}
+                {/* PDF 첨부 버튼 */}
                 {email.hasPdf && (
                   <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f5' }}>
                     <button
                       onClick={() => viewPdf(email)}
                       disabled={isPdfLoading}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '6px 12px', background: '#F3E5F5', color: '#6A1B9A',
-                        border: '1px solid #CE93D8', borderRadius: 8, fontSize: 12,
-                        cursor: isPdfLoading ? 'wait' : 'pointer', fontWeight: 500,
-                        opacity: isPdfLoading ? 0.7 : 1
-                      }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#F3E5F5', color: '#6A1B9A', border: '1px solid #CE93D8', borderRadius: 8, fontSize: 12, cursor: isPdfLoading ? 'wait' : 'pointer', fontWeight: 500, opacity: isPdfLoading ? 0.7 : 1 }}>
                       {isPdfLoading ? '⏳ 로딩 중...' : '📄 인보이스 PDF 보기'}
                     </button>
+                  </div>
+                )}
+
+                {/* 인보이스 링크 버튼 */}
+                {!email.hasPdf && email.invoiceUrl && (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f5' }}>
+                    <a
+                      href={email.invoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#E8F5E9', color: '#1B5E20', border: '1px solid #81C784', borderRadius: 8, fontSize: 12, textDecoration: 'none', fontWeight: 500 }}>
+                      🔗 인보이스 링크 열기
+                    </a>
                   </div>
                 )}
               </div>

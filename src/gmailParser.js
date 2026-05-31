@@ -267,6 +267,17 @@ function findPdfAttachment(payload) {
   return null
 }
 
+// PDF 또는 인보이스 링크 추출
+function extractInvoiceUrl(body) {
+  // PDF 직접 링크
+  const pdfMatch = body.match(/https?:\/\/[^\s"'<>]+\.pdf[^\s"'<>]*/i)
+  if (pdfMatch) return pdfMatch[0]
+  // 인보이스/영수증 링크
+  const invoiceMatch = body.match(/https?:\/\/[^\s"'<>]*(?:invoice|receipt|billing|payment)[^\s"'<>]*/i)
+  if (invoiceMatch) return invoiceMatch[0]
+  return null
+}
+
 // ── 메인 파싱 함수 ──────────────────────────────────────
 
 function matchServicePattern(fromEmail, subject) {
@@ -323,6 +334,8 @@ export async function fetchPaymentEmails(sinceDate = '2024/10/01') {
 
       // PDF 첨부파일 확인
       const pdfAttachment = findPdfAttachment(detail.payload)
+      // 본문에서 인보이스 링크 추출 (첨부 없을 때)
+      const invoiceUrl = pdfAttachment ? null : extractInvoiceUrl(body)
 
       results.push({
         messageId: msg.id,
@@ -336,6 +349,7 @@ export async function fetchPaymentEmails(sinceDate = '2024/10/01') {
         hasPdf: !!pdfAttachment,
         pdfAttachmentId: pdfAttachment?.attachmentId || null,
         pdfFilename: pdfAttachment?.filename || null,
+        invoiceUrl: invoiceUrl || '',
         snippet: detail.snippet || '',
       })
     } catch (e) {
