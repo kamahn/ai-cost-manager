@@ -12,8 +12,8 @@ export default function GmailSync({ projects, services, onRefresh }) {
   const [savedIds, setSavedIds] = useState(new Set())
   const [error, setError] = useState('')
   const [sinceDate, setSinceDate] = useState('2024-10-01')
-  const [pdfViewer, setPdfViewer] = useState(null) // { url, filename }
-  const [pdfLoading, setPdfLoading] = useState(null) // messageId
+  const [pdfViewer, setPdfViewer] = useState(null)
+  const [pdfLoading, setPdfLoading] = useState(null)
 
   const fetchEmails = async () => {
     setLoading(true)
@@ -79,13 +79,11 @@ export default function GmailSync({ projects, services, onRefresh }) {
     }
   }
 
-  // PDF 보기
   const viewPdf = async (email) => {
     if (!email.pdfAttachmentId) return
     setPdfLoading(email.messageId)
     try {
       const base64Data = await fetchPdfAttachment(email.messageId, email.pdfAttachmentId)
-      // base64 → Blob URL
       const binary = atob(base64Data.replace(/-/g, '+').replace(/_/g, '/'))
       const bytes = new Uint8Array(binary.length)
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
@@ -119,29 +117,23 @@ export default function GmailSync({ projects, services, onRefresh }) {
 
       {/* PDF 뷰어 모달 */}
       {pdfViewer && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
-          {/* 모달 헤더 */}
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#1a1a1a', flexShrink: 0 }}>
             <span style={{ color: '#fff', fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
               📄 {pdfViewer.filename}
             </span>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 12 }}>
               <button onClick={downloadPdf}
                 style={{ padding: '6px 14px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
                 다운로드
               </button>
               <button onClick={closePdf}
-                style={{ padding: '6px 14px', background: '#444', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>
+                style={{ padding: '6px 14px', background: '#555', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>
                 닫기
               </button>
             </div>
           </div>
-          {/* PDF iframe */}
-          <iframe
-            src={pdfViewer.url}
-            style={{ flex: 1, border: 'none', background: '#fff' }}
-            title="Invoice PDF"
-          />
+          <iframe src={pdfViewer.url} style={{ flex: 1, border: 'none', background: '#fff' }} title="Invoice PDF" />
         </div>
       )}
 
@@ -158,7 +150,7 @@ export default function GmailSync({ projects, services, onRefresh }) {
               style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #d2d2d7', fontSize: 13, boxSizing: 'border-box' }} />
           </div>
           <button onClick={fetchEmails} disabled={loading}
-            style={{ padding: '9px 16px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, whiteSpace: 'nowrap', marginBottom: 0 }}>
+            style={{ padding: '9px 16px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, whiteSpace: 'nowrap' }}>
             {loading ? '검색 중...' : '메일 가져오기'}
           </button>
         </div>
@@ -205,8 +197,8 @@ export default function GmailSync({ projects, services, onRefresh }) {
                 padding: '12px 14px',
                 marginBottom: 8,
               }}>
-                {/* 메인 행 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                {/* 메인 행 - 클릭시 선택 */}
+                <div
                   onClick={() => !isSaved && toggleSelect(email.messageId)}
                   style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: isSaved ? 'default' : 'pointer' }}>
                   {/* 체크박스 */}
@@ -219,8 +211,7 @@ export default function GmailSync({ projects, services, onRefresh }) {
                     {(isSaved || isSelected) && <span style={{ color: '#fff', fontSize: 11 }}>✓</span>}
                   </div>
 
-                  <div style={{ flex: 1, minWidth: 0 }}
-                    onClick={() => !isSaved && toggleSelect(email.messageId)}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3, flexWrap: 'wrap' }}>
                       <ServiceIcon serviceName={email.service} size={14} style={{ fontSize: 13, fontWeight: 600 }} />
                       <span style={{ fontSize: 10, padding: '1px 6px', background: email.type === 'subscription' ? '#E3F2FD' : '#FFF3E0', color: email.type === 'subscription' ? '#0D47A1' : '#E65100', borderRadius: 20 }}>
@@ -241,13 +232,19 @@ export default function GmailSync({ projects, services, onRefresh }) {
                   </div>
                 </div>
 
-                {/* PDF 버튼 - 별도 행 */}
+                {/* PDF 버튼 */}
                 {email.hasPdf && (
                   <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f5' }}>
                     <button
-                      onClick={e => { e.stopPropagation(); viewPdf(email) }}
+                      onClick={() => viewPdf(email)}
                       disabled={isPdfLoading}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#F3E5F5', color: '#6A1B9A', border: '1px solid #CE93D8', borderRadius: 8, fontSize: 12, cursor: isPdfLoading ? 'wait' : 'pointer', fontWeight: 500, opacity: isPdfLoading ? 0.7 : 1 }}>
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '6px 12px', background: '#F3E5F5', color: '#6A1B9A',
+                        border: '1px solid #CE93D8', borderRadius: 8, fontSize: 12,
+                        cursor: isPdfLoading ? 'wait' : 'pointer', fontWeight: 500,
+                        opacity: isPdfLoading ? 0.7 : 1
+                      }}>
                       {isPdfLoading ? '⏳ 로딩 중...' : '📄 인보이스 PDF 보기'}
                     </button>
                   </div>
