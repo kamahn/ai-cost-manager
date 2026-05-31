@@ -60,9 +60,6 @@ export function getAccessToken() {
 
 // 로그아웃
 export function logout() {
-  if (accessToken) {
-    window.google.accounts.oauth2.revoke(accessToken)
-  }
   accessToken = null
   localStorage.removeItem('gapi_token')
   localStorage.removeItem('gapi_token_expiry')
