@@ -337,6 +337,8 @@ export async function fetchPaymentEmails(sinceDate = '2024/10/01') {
       // 본문에서 인보이스 링크 추출 (첨부 없을 때)
       const invoiceUrl = pdfAttachment ? null : extractInvoiceUrl(body)
 
+      console.log('[Gmail]', subject, '| hasPdf:', !!pdfAttachment, '| invoiceUrl:', invoiceUrl)
+
       results.push({
         messageId: msg.id,
         subject,
