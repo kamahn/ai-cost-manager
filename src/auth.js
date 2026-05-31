@@ -40,7 +40,7 @@ export function initTokenClient(callback) {
 // 로그인 요청
 export function requestLogin() {
   if (!tokenClient) return
-  tokenClient.requestAccessToken({ prompt: '' })
+  tokenClient.requestAccessToken({ prompt: 'consent' })
 }
 
 // 저장된 토큰 복원
