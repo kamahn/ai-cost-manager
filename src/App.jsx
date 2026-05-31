@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard.jsx'
 import PaymentList from './components/PaymentList.jsx'
 import SubscriptionList from './components/SubscriptionList.jsx'
 import ProjectList from './components/ProjectList.jsx'
+import GmailSync from './components/GmailSync.jsx'
 import { COLORS } from './styles.js'
 
 const TABS = [
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'payments',  label: '결제내역', icon: '💳' },
   { id: 'subs',      label: '구독',     icon: '🔄' },
   { id: 'projects',  label: '프로젝트', icon: '📁' },
+  { id: 'gmail',     label: 'Gmail',    icon: '📧' },
 ]
 
 export default function App() {
@@ -209,6 +211,7 @@ export default function App() {
         {tab === 'payments'  && <PaymentList payments={payments} projects={projects} services={services} onRefresh={loadAll} loading={loading} />}
         {tab === 'subs'      && <SubscriptionList subscriptions={subscriptions} projects={projects} services={services} onRefresh={loadAll} loading={loading} />}
         {tab === 'projects'  && <ProjectList projects={projects} payments={payments} subscriptions={subscriptions} onRefresh={loadAll} loading={loading} />}
+        {tab === 'gmail'     && <GmailSync projects={projects} services={services} onRefresh={loadAll} />}
       </div>
 
       {/* 하단 탭바 */}
