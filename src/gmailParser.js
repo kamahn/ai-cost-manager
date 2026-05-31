@@ -190,21 +190,16 @@ function extractAmount(text) {
 
 // ── 날짜 추출 ──────────────────────────────────────────
 
-function extractDate(text, fallbackTimestamp) {
-  const patterns = [
-    /(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/,
-    /(\w+ \d{1,2},? \d{4})/,
-    /(\d{1,2} \w+ \d{4})/,
-  ]
-  for (const p of patterns) {
-    const m = text.match(p)
-    if (m) {
-      const d = new Date(m[0])
-      if (!isNaN(d)) return d.toISOString().slice(0, 10)
-    }
+function extractDate(internalDate, dateHeader) {
+  // 1순위: internalDate (Gmail이 보장하는 수신 타임스탬프, ms 단위)
+  if (internalDate) {
+    const d = new Date(parseInt(internalDate))
+    if (!isNaN(d)) return d.toISOString().slice(0, 10)
   }
-  if (fallbackTimestamp) {
-    return new Date(parseInt(fallbackTimestamp)).toISOString().slice(0, 10)
+  // 2순위: Date 헤더 파싱
+  if (dateHeader) {
+    const d = new Date(dateHeader)
+    if (!isNaN(d)) return d.toISOString().slice(0, 10)
   }
   return new Date().toISOString().slice(0, 10)
 }
@@ -333,7 +328,7 @@ export async function fetchPaymentEmails(sinceDate = '2024/10/01') {
         messageId: msg.id,
         subject,
         from: fromEmail,
-        date: extractDate(body + date, detail.internalDate),
+        date: extractDate(detail.internalDate, date),
         service: serviceName,
         amount: amountInfo.amount,
         currency: amountInfo.currency,

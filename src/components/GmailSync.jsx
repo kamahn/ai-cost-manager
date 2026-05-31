@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { COLORS, SETTLE_COLORS, fmt } from '../styles.js'
-import { fetchPaymentEmails } from '../gmailParser.js'
+import { COLORS, fmt } from '../styles.js'
+import { fetchPaymentEmails, fetchPdfAttachment } from '../gmailParser.js'
 import { addPayment, addSubscription } from '../sheets.js'
 import ServiceIcon from './ServiceIcon.jsx'
 
@@ -12,6 +12,8 @@ export default function GmailSync({ projects, services, onRefresh }) {
   const [savedIds, setSavedIds] = useState(new Set())
   const [error, setError] = useState('')
   const [sinceDate, setSinceDate] = useState('2024-10-01')
+  const [pdfViewer, setPdfViewer] = useState(null) // { url, filename }
+  const [pdfLoading, setPdfLoading] = useState(null) // messageId
 
   const fetchEmails = async () => {
     setLoading(true)
@@ -77,32 +79,86 @@ export default function GmailSync({ projects, services, onRefresh }) {
     }
   }
 
+  // PDF 보기
+  const viewPdf = async (email) => {
+    if (!email.pdfAttachmentId) return
+    setPdfLoading(email.messageId)
+    try {
+      const base64Data = await fetchPdfAttachment(email.messageId, email.pdfAttachmentId)
+      // base64 → Blob URL
+      const binary = atob(base64Data.replace(/-/g, '+').replace(/_/g, '/'))
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const blob = new Blob([bytes], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+      setPdfViewer({ url, filename: email.pdfFilename || 'invoice.pdf' })
+    } catch (e) {
+      setError('PDF 로드 실패: ' + e.message)
+    } finally {
+      setPdfLoading(null)
+    }
+  }
+
+  const closePdf = () => {
+    if (pdfViewer?.url) URL.revokeObjectURL(pdfViewer.url)
+    setPdfViewer(null)
+  }
+
+  const downloadPdf = () => {
+    if (!pdfViewer) return
+    const a = document.createElement('a')
+    a.href = pdfViewer.url
+    a.download = pdfViewer.filename
+    a.click()
+  }
+
   const selectedCount = Object.values(selected).filter(Boolean).length
-  const unsavedEmails = emails.filter(e => !savedIds.has(e.messageId))
 
   return (
     <div style={{ padding: '0 16px 24px' }}>
 
-      {/* 기간 설정 + 가져오기 버튼 */}
+      {/* PDF 뷰어 모달 */}
+      {pdfViewer && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
+          {/* 모달 헤더 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#1a1a1a', flexShrink: 0 }}>
+            <span style={{ color: '#fff', fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+              📄 {pdfViewer.filename}
+            </span>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <button onClick={downloadPdf}
+                style={{ padding: '6px 14px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                다운로드
+              </button>
+              <button onClick={closePdf}
+                style={{ padding: '6px 14px', background: '#444', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>
+                닫기
+              </button>
+            </div>
+          </div>
+          {/* PDF iframe */}
+          <iframe
+            src={pdfViewer.url}
+            style={{ flex: 1, border: 'none', background: '#fff' }}
+            title="Invoice PDF"
+          />
+        </div>
+      )}
+
+      {/* 기간 설정 + 가져오기 */}
       <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5ea', padding: '16px', marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Gmail 결제 메일 가져오기</div>
         <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 12 }}>
-          지정한 날짜 이후의 결제 관련 메일을 자동으로 분석합니다.
+          지정한 날짜 이후 결제 관련 메일을 자동으로 분석합니다.
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <div style={{ flex: 1 }}>
             <label style={{ fontSize: 11, color: COLORS.textSecondary, display: 'block', marginBottom: 4 }}>시작 날짜</label>
-            <input
-              type="date"
-              value={sinceDate}
-              onChange={e => setSinceDate(e.target.value)}
-              style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #d2d2d7', fontSize: 13, boxSizing: 'border-box' }}
-            />
+            <input type="date" value={sinceDate} onChange={e => setSinceDate(e.target.value)}
+              style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #d2d2d7', fontSize: 13, boxSizing: 'border-box' }} />
           </div>
-          <button
-            onClick={fetchEmails}
-            disabled={loading}
-            style={{ marginTop: 18, padding: '9px 16px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, whiteSpace: 'nowrap' }}>
+          <button onClick={fetchEmails} disabled={loading}
+            style={{ padding: '9px 16px', background: COLORS.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, whiteSpace: 'nowrap', marginBottom: 0 }}>
             {loading ? '검색 중...' : '메일 가져오기'}
           </button>
         </div>
@@ -139,19 +195,20 @@ export default function GmailSync({ projects, services, onRefresh }) {
           {emails.map(email => {
             const isSaved = savedIds.has(email.messageId)
             const isSelected = !!selected[email.messageId]
+            const isPdfLoading = pdfLoading === email.messageId
+
             return (
-              <div key={email.messageId}
-                onClick={() => !isSaved && toggleSelect(email.messageId)}
-                style={{
-                  background: isSaved ? '#F1FFF6' : isSelected ? COLORS.primaryLight : '#fff',
-                  borderRadius: 14,
-                  border: `1px solid ${isSaved ? '#81C784' : isSelected ? COLORS.primary : '#e5e5ea'}`,
-                  padding: '12px 14px',
-                  marginBottom: 8,
-                  cursor: isSaved ? 'default' : 'pointer',
-                  opacity: isSaved ? 0.8 : 1,
-                }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div key={email.messageId} style={{
+                background: isSaved ? '#F1FFF6' : isSelected ? COLORS.primaryLight : '#fff',
+                borderRadius: 14,
+                border: `1px solid ${isSaved ? '#81C784' : isSelected ? COLORS.primary : '#e5e5ea'}`,
+                padding: '12px 14px',
+                marginBottom: 8,
+              }}>
+                {/* 메인 행 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                  onClick={() => !isSaved && toggleSelect(email.messageId)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: isSaved ? 'default' : 'pointer' }}>
                   {/* 체크박스 */}
                   <div style={{
                     width: 18, height: 18, borderRadius: 5, flexShrink: 0,
@@ -162,13 +219,13 @@ export default function GmailSync({ projects, services, onRefresh }) {
                     {(isSaved || isSelected) && <span style={{ color: '#fff', fontSize: 11 }}>✓</span>}
                   </div>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}
+                    onClick={() => !isSaved && toggleSelect(email.messageId)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3, flexWrap: 'wrap' }}>
                       <ServiceIcon serviceName={email.service} size={14} style={{ fontSize: 13, fontWeight: 600 }} />
                       <span style={{ fontSize: 10, padding: '1px 6px', background: email.type === 'subscription' ? '#E3F2FD' : '#FFF3E0', color: email.type === 'subscription' ? '#0D47A1' : '#E65100', borderRadius: 20 }}>
                         {email.type === 'subscription' ? '구독' : '결제'}
                       </span>
-                      {email.hasPdf && <span style={{ fontSize: 10, padding: '1px 6px', background: '#F3E5F5', color: '#6A1B9A', borderRadius: 20 }}>📄 PDF</span>}
                       {isSaved && <span style={{ fontSize: 10, color: '#4CAF50', fontWeight: 600 }}>저장완료</span>}
                     </div>
                     <div style={{ fontSize: 11, color: COLORS.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -183,6 +240,18 @@ export default function GmailSync({ projects, services, onRefresh }) {
                     </div>
                   </div>
                 </div>
+
+                {/* PDF 버튼 - 별도 행 */}
+                {email.hasPdf && (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f5' }}>
+                    <button
+                      onClick={e => { e.stopPropagation(); viewPdf(email) }}
+                      disabled={isPdfLoading}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#F3E5F5', color: '#6A1B9A', border: '1px solid #CE93D8', borderRadius: 8, fontSize: 12, cursor: isPdfLoading ? 'wait' : 'pointer', fontWeight: 500, opacity: isPdfLoading ? 0.7 : 1 }}>
+                      {isPdfLoading ? '⏳ 로딩 중...' : '📄 인보이스 PDF 보기'}
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })}
