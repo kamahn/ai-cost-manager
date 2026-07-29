@@ -35,6 +35,7 @@ const SERVICE_DOMAINS = {
   'udio': 'udio.com',
   'elevenlabs': 'elevenlabs.io',
   'mubert': 'mubert.com',
+  'audimee': 'audimee.com',
 
   // 코딩/개발
   'comfyui': 'comfy.org',
