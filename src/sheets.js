@@ -212,6 +212,31 @@ export async function getServices() {
   return rows.slice(1).map(r => r[0]).filter(Boolean)
 }
 
+async function findServiceRow(name) {
+  const rows = await readSheet('서비스명!A:A')
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === name) return i + 1  // 1-indexed
+  }
+  return null
+}
+
+export async function addService(name) {
+  await appendRow('서비스명!A:A', [name])
+}
+
+export async function renameService(oldName, newName) {
+  const rowNum = await findServiceRow(oldName)
+  if (!rowNum) throw new Error('서비스를 찾을 수 없습니다: ' + oldName)
+  await updateRange(`서비스명!A${rowNum}:A${rowNum}`, [[newName]])
+}
+
+export async function deleteService(name) {
+  const rowNum = await findServiceRow(name)
+  if (!rowNum) return
+  const ids = await getSheetIds()
+  await deleteRow(ids['서비스명'], rowNum - 1)
+}
+
 // ── 유틸 ──────────────────────────────────────────────
 
 export function toKRW(amount, currency) {
