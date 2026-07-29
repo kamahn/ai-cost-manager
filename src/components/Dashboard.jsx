@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { COLORS, SETTLE_COLORS, fmt } from '../styles.js'
 import { toKRW } from '../sheets.js'
 import ServiceIcon from './ServiceIcon.jsx'
+import { getDisplayName } from '../serviceIcons.js'
 
 const CHART_COLORS = ['#7F77DD','#1D9E75','#D85A30','#378ADD','#D4537E','#639922','#BA7517','#E24B4A','#0F6E56','#888780']
 
@@ -19,7 +20,7 @@ export default function Dashboard({ payments, subscriptions, projects, onCheckAl
   // 서비스별 집계
   const byService = {}
   allItems.forEach(r => {
-    const key = r.service?.replace(/^[^\s]+\s/, '') || '기타'
+    const key = getDisplayName(r.service) || '기타'
     byService[key] = (byService[key] || 0) + toKRW(r.amount, r.currency)
   })
   const serviceEntries = Object.entries(byService).sort((a, b) => b[1] - a[1]).slice(0, 8)
@@ -56,7 +57,7 @@ export default function Dashboard({ payments, subscriptions, projects, onCheckAl
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#E65100' }}>구독 갱신 임박 {upcoming.length}건</div>
               <div style={{ fontSize: 11, color: '#BF360C', marginTop: 2 }}>
-                {upcoming.slice(0, 2).map(s => `${s.service?.replace(/^[^\s]+\s/, '')} (${s.daysLeft}일 후)`).join(', ')}
+                {upcoming.slice(0, 2).map(s => `${getDisplayName(s.service)} (${s.daysLeft}일 후)`).join(', ')}
                 {upcoming.length > 2 && ` 외 ${upcoming.length - 2}건`}
               </div>
             </div>
