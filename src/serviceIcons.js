@@ -23,6 +23,7 @@ const SERVICE_DOMAINS = {
 
   // AI 어시스턴트
   'chatgpt': 'openai.com',
+  'openai': 'openai.com',
   'claude': 'claude.ai',
   'gemini': 'gemini.google.com',
   'perplexity': 'perplexity.ai',
@@ -75,8 +76,15 @@ export function getFaviconUrl(serviceName) {
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
 }
 
+// 표시명 치환 (실제 데이터의 이름을 그대로 두고 화면에만 다르게 표시)
+const DISPLAY_NAME_OVERRIDES = {
+  'openai': 'ChatGPT',
+}
+
 // 서비스 표시명 (이모지 제거)
 export function getDisplayName(serviceName) {
   if (!serviceName) return ''
-  return serviceName.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/u, '').trim()
+  const cleaned = serviceName.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/u, '').trim()
+  const override = DISPLAY_NAME_OVERRIDES[cleaned.toLowerCase()]
+  return override || cleaned
 }
