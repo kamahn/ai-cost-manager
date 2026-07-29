@@ -7,6 +7,7 @@ const SERVICE_DOMAINS = {
   'pika': 'pika.art',
   'sora': 'openai.com',
   'luma': 'lumalabs.ai',
+  'dream machine': 'lumalabs.ai',
   'hailuo': 'hailuoai.com',
   'vidu': 'vidu.studio',
   'seedance': 'bytedance.com',
@@ -44,19 +45,22 @@ const SERVICE_DOMAINS = {
 
   // 기타
   'artlist': 'artlist.io',
-  'freepik': 'freepik.com',
+  'freepik': 'magnific.ai',
   'lalals': 'lalals.com',
   'topaz': 'topazlabs.com',
   'adobe': 'adobe.com',
   'notion': 'notion.so',
   'figma': 'figma.com',
+  'domo ai': 'domoai.app',
+  'supertone': 'supertone.ai',
+  'switchx': 'beeble.ai',
 }
 
 // 서비스명에서 도메인 찾기
 function findDomain(serviceName) {
   if (!serviceName) return null
   const lower = serviceName.toLowerCase()
-    .replace(/^[^\s]+\s/, '')  // 이모지+공백 제거
+    .replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/u, '')  // 이모지 제거
     .trim()
 
   // 정확히 일치
@@ -79,6 +83,8 @@ export function getFaviconUrl(serviceName) {
 // 표시명 치환 (실제 데이터의 이름을 그대로 두고 화면에만 다르게 표시)
 const DISPLAY_NAME_OVERRIDES = {
   'openai': 'ChatGPT',
+  'freepik': 'Magnific',
+  'dream machine': 'Luma',
 }
 
 // 서비스 표시명 (이모지 제거)
